@@ -27,6 +27,35 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased text-xs">
 
+    <!-- Recital sign-in (shared room code — same name = same live data) -->
+    <div id="signin-overlay" class="fixed inset-0 z-[100] bg-slate-900/95 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <div class="text-center">
+                <div class="inline-flex bg-gradient-to-tr from-pink-500 to-indigo-600 p-2.5 rounded-xl mb-2">
+                    <i class="fa-solid fa-person-dots-from-line text-white text-lg"></i>
+                </div>
+                <h2 class="text-lg font-black text-slate-900">Join a Recital</h2>
+                <p class="text-[11px] text-slate-500 mt-1">Everyone uses the <strong>same recital name</strong> to sync check-ins and the live show.</p>
+            </div>
+            <div>
+                <label for="signin-recital-input" class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Recital name</label>
+                <input type="text" id="signin-recital-input" autocomplete="off" placeholder="e.g. spring-2026 or Studio Showcase" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                <p class="text-[9px] text-slate-400 mt-1">Letters, numbers, spaces, and dashes only. Names are not case-sensitive.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button type="button" onclick="handleJoinRecital()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
+                    <span>Join Recital</span>
+                </button>
+                <button type="button" onclick="handleCreateRecital()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span>Create New</span>
+                </button>
+            </div>
+            <p id="signin-error" class="hidden text-[10px] font-bold text-rose-600 text-center"></p>
+        </div>
+    </div>
+
     <!-- Global App Header -->
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -39,6 +68,7 @@
                 <div>
                     <h1 class="text-sm font-black tracking-tight leading-none text-white">Recital<span class="text-indigo-400">Sync</span></h1>
                     <span class="text-[9px] uppercase tracking-wider text-pink-400 font-bold block leading-none mt-0.5">Backstage Control</span>
+                    <span id="header-recital-id" class="text-[8px] text-slate-400 font-bold block leading-none mt-0.5 hidden"></span>
                 </div>
             </div>
 
@@ -298,6 +328,26 @@
         <!-- 3. RECITAL SETUP PANEL (INITIAL CREATION ONLY)        -->
         <!-- ==================================================== -->
         <div id="panel-setup" class="space-y-3 hidden">
+
+            <!-- Recital account: sign out & delete cloud recital -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200">
+                <h3 class="font-black text-xs text-slate-950 flex items-center border-b border-slate-100 pb-2 mb-3">
+                    <i class="fa-solid fa-cloud text-indigo-500 mr-1.5"></i>
+                    Recital Account
+                </h3>
+                <p class="text-[10px] text-slate-500 mb-3">You are connected to recital <strong id="setup-active-recital-id" class="text-indigo-700">—</strong>. Share this exact name with volunteers and coordinators.</p>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="handleSignOut()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center space-x-1.5 border border-slate-200">
+                        <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+                        <span>Sign Out</span>
+                    </button>
+                    <button type="button" onclick="handleDeleteRecital()" class="bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center space-x-1.5 border border-rose-200">
+                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                        <span>Delete This Recital Forever</span>
+                    </button>
+                </div>
+                <p class="text-[9px] text-slate-400 mt-2">Delete removes all routines, dancers, and check-ins for this name from the cloud. This cannot be undone.</p>
+            </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 
@@ -388,6 +438,79 @@
 
     </main>
 
+    <!-- Firebase Realtime Database (paste your web app config from Firebase Console) -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
+        import { getDatabase, ref, set, onValue, get, remove } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9xRYjrl9g7h_3g_BnRoea7FfcvIlCCa0",
+            authDomain: "recital-tracker.firebaseapp.com",
+            databaseURL: "https://recital-tracker-default-rtdb.firebaseio.com",
+            projectId: "recital-tracker",
+            storageBucket: "recital-tracker.firebasestorage.app",
+            messagingSenderId: "1039061307164",
+            appId: "1:1039061307164:web:060356cd7bb14bdd91f4d9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let rtdbListenerUnsub = null;
+        let activeRecitalId = null;
+
+        function recitalPathRef(recitalId) {
+            return ref(db, `recitals/${recitalId}`);
+        }
+
+        window.firebaseApi = {
+            getRecitalId() { return activeRecitalId; },
+
+            async ensureAuth() {
+                if (!auth.currentUser) await signInAnonymously(auth);
+            },
+
+            connectRecital(recitalId, onData, onError) {
+                if (rtdbListenerUnsub) rtdbListenerUnsub();
+                activeRecitalId = recitalId;
+                const stateRef = recitalPathRef(recitalId);
+                window.firebaseDb = { stateRef, set, RECITAL_ID: recitalId };
+                rtdbListenerUnsub = onValue(stateRef, onData, onError);
+            },
+
+            disconnectRecital() {
+                if (rtdbListenerUnsub) rtdbListenerUnsub();
+                rtdbListenerUnsub = null;
+                activeRecitalId = null;
+                window.firebaseDb = null;
+            },
+
+            async recitalExists(recitalId) {
+                const snap = await get(recitalPathRef(recitalId));
+                return snap.exists();
+            },
+
+            async createRecital(recitalId, initialState) {
+                await set(recitalPathRef(recitalId), initialState);
+            },
+
+            async deleteRecital(recitalId) {
+                await remove(recitalPathRef(recitalId));
+            }
+        };
+
+        window.firebaseReady = (async () => {
+            try {
+                await window.firebaseApi.ensureAuth();
+            } catch (err) {
+                console.error('Firebase auth failed:', err);
+                window.firebaseApiError = err;
+            }
+        })();
+    </script>
+
     <!-- App Engine Client Logic -->
     <script>
         // --- Shared Core Database State Schema ---
@@ -427,20 +550,186 @@
             "p2_d3": true
         };
 
-        // Initialize Local Storage Sandbox
-        function initApp() {
-            const stored = localStorage.getItem('recital_sync_preview_state_v6');
-            if (stored) {
-                try {
-                    appState = JSON.parse(stored);
-                } catch (e) {
-                    loadDemoBaseline();
-                }
+        const SESSION_RECITAL_KEY = 'recital_sync_active_recital';
+        let activeRecitalId = null;
+
+        function getEmptyAppState() {
+            return { currentDanceIndex: 0, dances: [], dancers: [], attendance: {} };
+        }
+
+        function sanitizeRecitalId(raw) {
+            const trimmed = (raw || '').trim().toLowerCase();
+            const slug = trimmed
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9\-]/g, '')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+            return slug;
+        }
+
+        function showSignInScreen(message) {
+            document.getElementById('signin-overlay').classList.remove('hidden');
+            const errEl = document.getElementById('signin-error');
+            if (message) {
+                errEl.textContent = message;
+                errEl.classList.remove('hidden');
             } else {
-                loadDemoBaseline();
+                errEl.classList.add('hidden');
+                errEl.textContent = '';
+            }
+        }
+
+        function hideSignInScreen() {
+            document.getElementById('signin-overlay').classList.add('hidden');
+            document.getElementById('signin-error').classList.add('hidden');
+        }
+
+        function updateRecitalSessionUI() {
+            const headerEl = document.getElementById('header-recital-id');
+            const setupEl = document.getElementById('setup-active-recital-id');
+            if (activeRecitalId) {
+                headerEl.textContent = `Recital: ${activeRecitalId}`;
+                headerEl.classList.remove('hidden');
+                setupEl.textContent = activeRecitalId;
+            } else {
+                headerEl.classList.add('hidden');
+                setupEl.textContent = '—';
+            }
+        }
+
+        function applyRemoteSnapshot(data) {
+            if (data) {
+                appState = {
+                    currentDanceIndex: data.currentDanceIndex ?? 0,
+                    dances: Array.isArray(data.dances) ? data.dances : [],
+                    dancers: Array.isArray(data.dancers) ? data.dancers : [],
+                    attendance: data.attendance && typeof data.attendance === 'object' ? data.attendance : {}
+                };
+            } else {
+                appState = getEmptyAppState();
             }
             syncUI();
-            showToast("Sandbox storage initialized!", "success");
+        }
+
+        function connectToRecital(recitalId) {
+            window.firebaseApi.connectRecital(recitalId, (snapshot) => {
+                applyRemoteSnapshot(snapshot.val());
+            }, (err) => {
+                console.error(err);
+                showToast("Realtime Database connection failed", "warning");
+            });
+        }
+
+        async function joinRecital(recitalId, { quiet } = {}) {
+            activeRecitalId = recitalId;
+            sessionStorage.setItem(SESSION_RECITAL_KEY, recitalId);
+            const url = new URL(location.href);
+            url.searchParams.set('recital', recitalId);
+            history.replaceState(null, '', url);
+
+            hideSignInScreen();
+            updateRecitalSessionUI();
+            connectToRecital(recitalId);
+
+            if (!quiet) showToast(`Joined recital "${recitalId}"`, "success");
+        }
+
+        async function handleJoinRecital() {
+            const recitalId = sanitizeRecitalId(document.getElementById('signin-recital-input').value);
+            if (!recitalId) {
+                showSignInScreen('Enter a recital name (letters and numbers).');
+                return;
+            }
+            if (window.firebaseApiError) {
+                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
+                return;
+            }
+            await joinRecital(recitalId);
+        }
+
+        async function handleCreateRecital() {
+            const recitalId = sanitizeRecitalId(document.getElementById('signin-recital-input').value);
+            if (!recitalId) {
+                showSignInScreen('Enter a name for the new recital.');
+                return;
+            }
+            if (window.firebaseApiError) {
+                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
+                return;
+            }
+            try {
+                const exists = await window.firebaseApi.recitalExists(recitalId);
+                if (exists) {
+                    showSignInScreen(`"${recitalId}" already exists. Use Join Recital instead.`);
+                    return;
+                }
+                await window.firebaseApi.createRecital(recitalId, getEmptyAppState());
+                await joinRecital(recitalId, { quiet: true });
+                showToast(`Created recital "${recitalId}"`, "success");
+            } catch (err) {
+                console.error(err);
+                showSignInScreen('Could not create recital. Check database rules.');
+            }
+        }
+
+        function handleSignOut() {
+            window.firebaseApi.disconnectRecital();
+            sessionStorage.removeItem(SESSION_RECITAL_KEY);
+            activeRecitalId = null;
+            appState = getEmptyAppState();
+            const url = new URL(location.href);
+            url.searchParams.delete('recital');
+            history.replaceState(null, '', url);
+            updateRecitalSessionUI();
+            syncUI();
+            document.getElementById('signin-recital-input').value = '';
+            showSignInScreen();
+            showToast("Signed out", "info");
+        }
+
+        async function handleDeleteRecital() {
+            if (!activeRecitalId) return;
+            const name = activeRecitalId;
+            const typed = prompt(
+                `Delete recital "${name}" and ALL its data forever?\n\nType the recital name exactly to confirm:`
+            );
+            if (typed === null) return;
+            if (sanitizeRecitalId(typed) !== name) {
+                showToast("Name did not match — delete cancelled", "warning");
+                return;
+            }
+            try {
+                await window.firebaseApi.deleteRecital(name);
+                showToast(`Deleted recital "${name}"`, "info");
+                handleSignOut();
+            } catch (err) {
+                console.error(err);
+                showToast("Could not delete recital", "warning");
+            }
+        }
+
+        async function initApp() {
+            await window.firebaseReady;
+
+            if (window.firebaseApiError) {
+                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
+                syncUI();
+                return;
+            }
+
+            const urlRecital = sanitizeRecitalId(new URLSearchParams(location.search).get('recital') || '');
+            const savedRecital = sanitizeRecitalId(sessionStorage.getItem(SESSION_RECITAL_KEY) || '');
+
+            if (urlRecital) {
+                await joinRecital(urlRecital, { quiet: true });
+                showToast(`Live sync: "${urlRecital}"`, "success");
+            } else if (savedRecital) {
+                await joinRecital(savedRecital, { quiet: true });
+                showToast(`Live sync: "${savedRecital}"`, "success");
+            } else {
+                showSignInScreen();
+                syncUI();
+            }
         }
 
         function loadDemoBaseline() {
@@ -458,7 +747,12 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('recital_sync_preview_state_v6', JSON.stringify(appState));
+            if (!window.firebaseDb) return;
+            const { stateRef, set } = window.firebaseDb;
+            set(stateRef, appState).catch((err) => {
+                console.error(err);
+                showToast("Could not save to Realtime Database", "warning");
+            });
         }
 
         // Helper to normalize sequence numbers clean and sequential (1, 2, 3...)
@@ -1102,7 +1396,10 @@
             }
         }
 
-        // Initial setup run
+        document.getElementById('signin-recital-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleJoinRecital();
+        });
+
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
