@@ -1,7 +1,5 @@
-const CACHE_NAME = 'recital-sync-v1';
+const CACHE_NAME = 'recital-sync-v2';
 const APP_SHELL = [
-  './',
-  './index.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -30,6 +28,15 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) {
     return;
   }
+
+  // Always fetch fresh HTML/JS — stale cache breaks Firebase on new devices
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );

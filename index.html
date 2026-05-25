@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recital Stage Tracker - Coordinator 4-Group Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="Backstage recital check-in and live show tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RecitalSync">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <title>RecitalSync — Backstage Tracker</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -53,6 +62,7 @@
                 </button>
             </div>
             <p id="signin-error" class="hidden text-[10px] font-bold text-rose-600 text-center"></p>
+            <p id="signin-https-hint" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-center leading-snug"></p>
         </div>
     </div>
 
@@ -438,12 +448,11 @@
 
     </main>
 
-    <!-- Firebase Realtime Database (paste your web app config from Firebase Console) -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-        import { getDatabase, ref, set, onValue, get, remove } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js';
-        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
-
+    <!-- Firebase (compat SDK — most reliable for Realtime Database on phones) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyC9xRYjrl9g7h_3g_BnRoea7FfcvIlCCa0",
             authDomain: "recital-tracker.firebaseapp.com",
@@ -454,50 +463,64 @@
             appId: "1:1039061307164:web:060356cd7bb14bdd91f4d9"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
-        let rtdbListenerUnsub = null;
+        // Phones / guest Wi‑Fi often block WebSockets — long polling avoids "runtime failed"
+        try {
+            firebase.database().INTERNAL.forceLongPolling();
+        } catch (e) {
+            console.warn('Long polling not enabled:', e);
+        }
+
+        let listenerRef = null;
         let activeRecitalId = null;
 
-        function recitalPathRef(recitalId) {
-            return ref(db, `recitals/${recitalId}`);
+        function recitalRef(recitalId) {
+            return firebase.database().ref('recitals/' + recitalId);
         }
 
         window.firebaseApi = {
             getRecitalId() { return activeRecitalId; },
 
             async ensureAuth() {
-                if (!auth.currentUser) await signInAnonymously(auth);
+                if (!firebase.auth().currentUser) {
+                    await firebase.auth().signInAnonymously();
+                }
             },
 
             connectRecital(recitalId, onData, onError) {
-                if (rtdbListenerUnsub) rtdbListenerUnsub();
+                this.disconnectRecital();
                 activeRecitalId = recitalId;
-                const stateRef = recitalPathRef(recitalId);
-                window.firebaseDb = { stateRef, set, RECITAL_ID: recitalId };
-                rtdbListenerUnsub = onValue(stateRef, onData, onError);
+                listenerRef = recitalRef(recitalId);
+                window.firebaseDb = { ref: listenerRef, RECITAL_ID: recitalId };
+                listenerRef.on('value', onData, onError);
             },
 
             disconnectRecital() {
-                if (rtdbListenerUnsub) rtdbListenerUnsub();
-                rtdbListenerUnsub = null;
+                if (listenerRef) {
+                    listenerRef.off();
+                    listenerRef = null;
+                }
                 activeRecitalId = null;
                 window.firebaseDb = null;
             },
 
             async recitalExists(recitalId) {
-                const snap = await get(recitalPathRef(recitalId));
+                await this.ensureAuth();
+                const snap = await recitalRef(recitalId).once('value');
                 return snap.exists();
             },
 
             async createRecital(recitalId, initialState) {
-                await set(recitalPathRef(recitalId), initialState);
+                await this.ensureAuth();
+                await recitalRef(recitalId).set(initialState);
             },
 
             async deleteRecital(recitalId) {
-                await remove(recitalPathRef(recitalId));
+                await this.ensureAuth();
+                await recitalRef(recitalId).remove();
             }
         };
 
@@ -567,8 +590,41 @@
             return slug;
         }
 
+        function formatFirebaseError(err) {
+            const code = err?.code || '';
+            if (code === 'auth/operation-not-allowed' || code.includes('admin-restricted-operation')) {
+                return 'Enable Anonymous sign-in: Firebase Console → Authentication → Sign-in method → Anonymous → Enable.';
+            }
+            if (code === 'PERMISSION_DENIED' || code === 'permission-denied') {
+                return 'Database permission denied. In Realtime Database → Rules, publish rules that allow auth users under "recitals" (see database.rules.json).';
+            }
+            if (code === 'NETWORK_ERROR' || code === 'unavailable') {
+                return 'Network error. Check internet connection and try again.';
+            }
+            return err?.message || String(err) || 'Unknown error';
+        }
+
+        async function ensureFirebaseReady() {
+            await window.firebaseReady;
+            if (window.firebaseApiError) {
+                throw window.firebaseApiError;
+            }
+            await window.firebaseApi.ensureAuth();
+        }
+
+        function updateHttpsInstallHint() {
+            const hint = document.getElementById('signin-https-hint');
+            if (window.isSecureContext) {
+                hint.classList.add('hidden');
+                return;
+            }
+            hint.textContent = 'Install to home screen requires HTTPS. Deploy with Firebase Hosting (free) — see README in project folder.';
+            hint.classList.remove('hidden');
+        }
+
         function showSignInScreen(message) {
             document.getElementById('signin-overlay').classList.remove('hidden');
+            updateHttpsInstallHint();
             const errEl = document.getElementById('signin-error');
             if (message) {
                 errEl.textContent = message;
@@ -615,12 +671,28 @@
             window.firebaseApi.connectRecital(recitalId, (snapshot) => {
                 applyRemoteSnapshot(snapshot.val());
             }, (err) => {
-                console.error(err);
-                showToast("Realtime Database connection failed", "warning");
+                console.error('RTDB listener error:', err);
+                showToast(formatFirebaseError(err), "warning");
             });
         }
 
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && activeRecitalId && window.firebaseApi) {
+                window.firebaseApi.ensureAuth().catch(console.error);
+            }
+        });
+
         async function joinRecital(recitalId, { quiet } = {}) {
+            await ensureFirebaseReady();
+
+            if (activeRecitalId === recitalId && window.firebaseDb) {
+                hideSignInScreen();
+                updateRecitalSessionUI();
+                if (!quiet) showToast(`Already on recital "${recitalId}"`, "info");
+                return;
+            }
+
+            window.firebaseApi.disconnectRecital();
             activeRecitalId = recitalId;
             sessionStorage.setItem(SESSION_RECITAL_KEY, recitalId);
             const url = new URL(location.href);
@@ -640,11 +712,13 @@
                 showSignInScreen('Enter a recital name (letters and numbers).');
                 return;
             }
-            if (window.firebaseApiError) {
-                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
-                return;
+            try {
+                await ensureFirebaseReady();
+                await joinRecital(recitalId);
+            } catch (err) {
+                console.error(err);
+                showSignInScreen(formatFirebaseError(err));
             }
-            await joinRecital(recitalId);
         }
 
         async function handleCreateRecital() {
@@ -653,11 +727,8 @@
                 showSignInScreen('Enter a name for the new recital.');
                 return;
             }
-            if (window.firebaseApiError) {
-                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
-                return;
-            }
             try {
+                await ensureFirebaseReady();
                 const exists = await window.firebaseApi.recitalExists(recitalId);
                 if (exists) {
                     showSignInScreen(`"${recitalId}" already exists. Use Join Recital instead.`);
@@ -668,7 +739,7 @@
                 showToast(`Created recital "${recitalId}"`, "success");
             } catch (err) {
                 console.error(err);
-                showSignInScreen('Could not create recital. Check database rules.');
+                showSignInScreen(formatFirebaseError(err));
             }
         }
 
@@ -721,11 +792,22 @@
             const savedRecital = sanitizeRecitalId(sessionStorage.getItem(SESSION_RECITAL_KEY) || '');
 
             if (urlRecital) {
-                await joinRecital(urlRecital, { quiet: true });
-                showToast(`Live sync: "${urlRecital}"`, "success");
+                try {
+                    await joinRecital(urlRecital, { quiet: true });
+                    showToast(`Live sync: "${urlRecital}"`, "success");
+                } catch (err) {
+                    console.error(err);
+                    showSignInScreen(formatFirebaseError(err));
+                }
             } else if (savedRecital) {
-                await joinRecital(savedRecital, { quiet: true });
-                showToast(`Live sync: "${savedRecital}"`, "success");
+                try {
+                    await joinRecital(savedRecital, { quiet: true });
+                    showToast(`Live sync: "${savedRecital}"`, "success");
+                } catch (err) {
+                    console.error(err);
+                    sessionStorage.removeItem(SESSION_RECITAL_KEY);
+                    showSignInScreen(formatFirebaseError(err));
+                }
             } else {
                 showSignInScreen();
                 syncUI();
@@ -748,8 +830,7 @@
 
         function saveToStorage() {
             if (!window.firebaseDb) return;
-            const { stateRef, set } = window.firebaseDb;
-            set(stateRef, appState).catch((err) => {
+            window.firebaseDb.ref.set(appState).catch((err) => {
                 console.error(err);
                 showToast("Could not save to Realtime Database", "warning");
             });
@@ -1401,6 +1482,24 @@
         });
 
         window.addEventListener('DOMContentLoaded', initApp);
+
+        // PWA install on Android/iOS requires HTTPS (Firebase Hosting), not LAN http://192.168...
+        if ('serviceWorker' in navigator && window.isSecureContext) {
+            window.addEventListener('load', async () => {
+                try {
+                    const reg = await navigator.serviceWorker.register('./sw.js');
+                    await reg.update();
+                } catch (err) {
+                    console.warn('Service worker registration failed:', err);
+                }
+            });
+        }
+
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+        });
     </script>
 </body>
 </html>
