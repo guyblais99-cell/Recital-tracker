@@ -10,16 +10,21 @@ npx serve
 
 Open `http://localhost:3000`. **Install to phone home screen will not work** on `http://192.168.x.x` — Android requires **HTTPS**.
 
-## Deploy (HTTPS — required for phone install + stable Firebase)
+## Deploy to Vercel (HTTPS — required for phone install)
 
-1. Install CLI: `npm install -g firebase-tools`
-2. Login: `firebase login`
-3. From this folder: `firebase use recital-tracker` (or your project id)
-4. Deploy: `firebase deploy`
+1. Push to GitHub — **must include** `icons/icon-192.png` and `icons/icon-512.png`
+2. Import project in [vercel.com](https://vercel.com) → deploy from repo
+3. Open your `https://….vercel.app` URL on the phone (not `http://192.168…`)
 
-Your app URL: `https://recital-tracker.web.app` (or the URL shown in the console).
+**Install on Android:** Chrome → green **Install** button in the header, or ⋮ → **Install app**.
 
-Open that URL on Android → Chrome menu → **Install app** or **Add to Home screen**.
+**Install on iPhone:** Safari only → Share → **Add to Home Screen** (Chrome on iOS does not offer full install).
+
+## Deploy to Firebase Hosting (alternative)
+
+```bash
+firebase deploy --only hosting
+```
 
 ## Firebase setup
 

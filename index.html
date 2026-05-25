@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RecitalSync">
     <link rel="manifest" href="./manifest.webmanifest">
-    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     <title>RecitalSync — Backstage Tracker</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -94,6 +94,12 @@
                     <span id="global-ticker-title" class="font-extrabold text-pink-400 leading-none">Loading...</span>
                 </div>
             </div>
+
+            <!-- Install app (PWA) — shown when browser allows, or tap for instructions -->
+            <button type="button" id="btn-pwa-install" onclick="handleInstallAppClick()" class="hidden bg-emerald-700 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-emerald-500/50 flex items-center space-x-1 shrink-0">
+                <i class="fa-solid fa-download text-[9px]"></i>
+                <span>Install</span>
+            </button>
 
             <!-- Navigation Panel Switcher (3 Distinct Roles) -->
             <div class="bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex space-x-0.5 w-full sm:w-auto">
@@ -665,8 +671,54 @@
                 hint.classList.add('hidden');
                 return;
             }
-            hint.textContent = 'Install to home screen requires HTTPS. Deploy with Firebase Hosting (free) — see README in project folder.';
+            hint.textContent = 'Install requires HTTPS. Use your Vercel URL (https://….vercel.app), not a LAN address like http://192.168.x.x';
             hint.classList.remove('hidden');
+        }
+
+        let deferredInstallPrompt = null;
+
+        function isIosDevice() {
+            return /iphone|ipad|ipod/i.test(navigator.userAgent);
+        }
+
+        function updateInstallButton() {
+            const btn = document.getElementById('btn-pwa-install');
+            if (!btn) return;
+            if (!window.isSecureContext) {
+                btn.classList.remove('hidden');
+                btn.querySelector('span').textContent = 'Install help';
+                return;
+            }
+            if (deferredInstallPrompt || isIosDevice()) {
+                btn.classList.remove('hidden');
+                btn.querySelector('span').textContent = isIosDevice() ? 'Add to Home' : 'Install app';
+            }
+        }
+
+        async function handleInstallAppClick() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                const { outcome } = await deferredInstallPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showToast('RecitalSync installed!', 'success');
+                }
+                deferredInstallPrompt = null;
+                updateInstallButton();
+                return;
+            }
+            const isAndroid = /android/i.test(navigator.userAgent);
+            let msg = 'To install:\n\n';
+            if (!window.isSecureContext) {
+                msg += '• Open your HTTPS Vercel link (starts with https://), not http://192.168…\n\n';
+            }
+            if (isIosDevice()) {
+                msg += 'iPhone (Safari):\n1. Tap Share\n2. Add to Home Screen\n3. Tap Add';
+            } else if (isAndroid) {
+                msg += 'Android (Chrome):\n1. Tap ⋮ menu (top right)\n2. Install app or Add to Home screen\n\nIf missing: use https:// URL and refresh once.';
+            } else {
+                msg += 'Chrome: ⋮ menu → Install RecitalSync\nOr use the install icon in the address bar.';
+            }
+            alert(msg);
         }
 
         function showSignInScreen(message) {
@@ -1665,14 +1717,8 @@
 
         window.addEventListener('DOMContentLoaded', initApp);
 
-        // Clear stale service workers on local dev (they can serve old broken JS)
-        if ('serviceWorker' in navigator && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-            navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
-        }
-
-        // PWA: HTTPS required (Firebase Hosting). Register only on deployed site, not LAN IP.
-        const onFirebaseHosting = location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com');
-        if ('serviceWorker' in navigator && window.isSecureContext && onFirebaseHosting) {
+        // Service worker required for Chrome "Install app" (Vercel, Firebase Hosting, localhost)
+        if ('serviceWorker' in navigator && window.isSecureContext) {
             window.addEventListener('load', async () => {
                 try {
                     const reg = await navigator.serviceWorker.register('./sw.js');
@@ -1683,10 +1729,14 @@
             });
         }
 
-        let deferredInstallPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
+            updateInstallButton();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateInstallButton();
         });
     </script>
 </body>
