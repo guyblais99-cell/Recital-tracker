@@ -228,6 +228,11 @@
                     </button>
                 </div>
 
+                <button type="button" id="btn-begin-show" onclick="beginTheShow()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 rounded-lg text-xs transition-all shadow-md flex items-center justify-center space-x-2 disabled:opacity-40 disabled:pointer-events-none">
+                    <i class="fa-solid fa-play text-[11px]"></i>
+                    <span>Begin the Show</span>
+                </button>
+
                 <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3">
                     <button onclick="changeShowProgress(-1)" class="bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer">
                         <i class="fa-solid fa-backward text-[10px]"></i>
@@ -436,9 +441,23 @@
                             <i class="fa-solid fa-users text-indigo-500 mr-1.5"></i>
                             Dancer Registry & Quick Audits
                         </h3>
-                        <p class="text-[10px] text-slate-400">Review mapped lists. Delete dancers to clear profiles instantly.</p>
+                        <p class="text-[10px] text-slate-400">Select a dancer to edit routines, or tap a name below.</p>
                     </div>
                     <span id="setup-dancers-total" class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full font-sans">0 Registered</span>
+                </div>
+
+                <div class="mb-3 p-3 bg-indigo-50/50 border border-indigo-100 rounded-lg space-y-2">
+                    <label for="edit-dancer-select" class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider">Edit dancer routines</label>
+                    <select id="edit-dancer-select" onchange="onEditDancerSelected()" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-xs">
+                        <option value="">— Select a dancer —</option>
+                    </select>
+                    <div id="edit-dancer-checkboxes" class="space-y-1.5 border border-slate-200 rounded-lg p-2 max-h-[120px] overflow-y-auto bg-white custom-scrollbar min-h-[48px]">
+                        <p class="text-[10px] text-slate-400 italic">Select a dancer to edit their routine assignments.</p>
+                    </div>
+                    <button type="button" id="btn-save-dancer-routines" onclick="saveDancerRoutineEdits()" disabled class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:pointer-events-none text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-floppy-disk text-[9px]"></i>
+                        <span>Save Routine Assignments</span>
+                    </button>
                 </div>
                 
                 <div id="setup-dancer-registry-cards" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
@@ -916,7 +935,9 @@
             renderCoordinatorRunSheet();
             renderCoordinatorGatekeeper();
             renderSetupRoutinesList();
+            populateEditDancerSelect();
             renderSetupDancerRegistry();
+            updateBeginShowButton();
         }
 
         // --- Select & Checkbox Setup Population ---
@@ -940,8 +961,8 @@
             }
         }
 
-        function populateHostCheckboxes() {
-            const container = document.getElementById('host-dance-checkboxes');
+        function buildDanceCheckboxMarkup(containerId, selectedDanceIds, inputClass) {
+            const container = document.getElementById(containerId);
             container.innerHTML = "";
 
             if (appState.dances.length === 0) {
@@ -949,15 +970,99 @@
                 return;
             }
 
+            const selected = new Set(selectedDanceIds || []);
             appState.dances.forEach(dance => {
                 const label = document.createElement('label');
                 label.className = "flex items-center space-x-1.5 text-[10px] font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50 transition-all";
+                const checked = selected.has(dance.id) ? 'checked' : '';
                 label.innerHTML = `
-                    <input type="checkbox" value="${dance.id}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600">
+                    <input type="checkbox" value="${dance.id}" class="${inputClass} rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600" ${checked}>
                     <span>#${dance.sequence} - ${dance.name}</span>
                 `;
                 container.appendChild(label);
             });
+        }
+
+        function populateHostCheckboxes() {
+            buildDanceCheckboxMarkup('host-dance-checkboxes', [], 'host-dance-cb');
+        }
+
+        let editingDancerId = null;
+
+        function populateEditDancerSelect() {
+            const select = document.getElementById('edit-dancer-select');
+            const current = select.value;
+            select.innerHTML = `<option value="">— Select a dancer —</option>`;
+            appState.dancers.forEach(dancer => {
+                const opt = document.createElement('option');
+                opt.value = dancer.id;
+                opt.textContent = dancer.name;
+                select.appendChild(opt);
+            });
+            if (current && appState.dancers.some(d => d.id === current)) {
+                select.value = current;
+            } else if (editingDancerId && appState.dancers.some(d => d.id === editingDancerId)) {
+                select.value = editingDancerId;
+            } else {
+                editingDancerId = null;
+            }
+            onEditDancerSelected();
+        }
+
+        function onEditDancerSelected() {
+            const dancerId = document.getElementById('edit-dancer-select').value;
+            editingDancerId = dancerId || null;
+            const saveBtn = document.getElementById('btn-save-dancer-routines');
+            const container = document.getElementById('edit-dancer-checkboxes');
+
+            if (!dancerId) {
+                saveBtn.disabled = true;
+                container.innerHTML = `<p class="text-[10px] text-slate-400 italic">Select a dancer to edit their routine assignments.</p>`;
+                return;
+            }
+
+            const dancer = appState.dancers.find(d => d.id === dancerId);
+            if (!dancer) {
+                saveBtn.disabled = true;
+                return;
+            }
+
+            saveBtn.disabled = false;
+            buildDanceCheckboxMarkup('edit-dancer-checkboxes', dancer.danceIds, 'edit-dance-cb');
+        }
+
+        function selectDancerForEdit(dancerId) {
+            editingDancerId = dancerId;
+            document.getElementById('edit-dancer-select').value = dancerId;
+            onEditDancerSelected();
+            document.getElementById('edit-dancer-select').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function saveDancerRoutineEdits() {
+            const dancerId = document.getElementById('edit-dancer-select').value;
+            if (!dancerId) return;
+
+            const dancer = appState.dancers.find(d => d.id === dancerId);
+            if (!dancer) return;
+
+            const checkedBoxes = document.querySelectorAll('#edit-dancer-checkboxes input.edit-dance-cb:checked');
+            const newDanceIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+            if (newDanceIds.length === 0) {
+                showToast("Dancer must stay assigned to at least 1 routine.", "warning");
+                return;
+            }
+
+            const removedIds = dancer.danceIds.filter(id => !newDanceIds.includes(id));
+            dancer.danceIds = newDanceIds;
+
+            removedIds.forEach(danceId => {
+                delete appState.attendance[`${dancerId}_${danceId}`];
+            });
+
+            saveToStorage();
+            syncUI();
+            showToast(`Updated routines for ${dancer.name}`, "success");
         }
 
         // --- Table Volunteers Portal Execution ---
@@ -1132,6 +1237,34 @@
         }
 
         // --- Coordinator View Execution ---
+        function beginTheShow() {
+            if (appState.dances.length === 0) {
+                showToast("Add routines in Recital Setup before beginning the show.", "warning");
+                return;
+            }
+            appState.currentDanceIndex = 0;
+            saveToStorage();
+            syncUI();
+            const first = appState.dances[0];
+            showToast(`Show started — now on #${first.sequence}: ${first.name}`, "success");
+        }
+
+        function updateBeginShowButton() {
+            const btn = document.getElementById('btn-begin-show');
+            if (!btn) return;
+            const hasDances = appState.dances.length > 0;
+            btn.disabled = !hasDances;
+            if (!hasDances) {
+                btn.querySelector('span').textContent = 'Begin the Show';
+                return;
+            }
+            if (appState.currentDanceIndex === 0) {
+                btn.querySelector('span').textContent = 'Restart from First Dance';
+            } else {
+                btn.querySelector('span').textContent = 'Begin the Show';
+            }
+        }
+
         function changeShowProgress(dir) {
             const nextIdx = appState.currentDanceIndex + dir;
             if (nextIdx >= 0 && nextIdx < appState.dances.length) {
@@ -1401,10 +1534,11 @@
             }
 
             appState.dancers.forEach(dancer => {
+                const isSelected = editingDancerId === dancer.id;
                 const card = document.createElement('div');
-                card.className = "bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 p-2 rounded-lg flex items-center justify-between transition-all group text-[11px]";
+                card.className = `p-2 rounded-lg flex items-center justify-between transition-all group text-[11px] cursor-pointer border ${isSelected ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-200' : 'bg-slate-50 hover:bg-slate-100/50 border-slate-200/60'}`;
+                card.onclick = () => selectDancerForEdit(dancer.id);
                 
-                // Fetch assigned routines
                 let routines = [];
                 dancer.danceIds.forEach(id => {
                     const d = appState.dances.find(dance => dance.id === id);
@@ -1414,11 +1548,11 @@
                 const routineStr = routines.length > 0 ? routines.join(', ') : 'None';
 
                 card.innerHTML = `
-                    <div class="truncate mr-2 leading-tight">
+                    <div class="truncate mr-2 leading-tight pointer-events-none">
                         <h4 class="font-extrabold text-slate-900 truncate">${dancer.name}</h4>
                         <p class="text-[9px] text-slate-400 truncate mt-0.5 font-medium"><i class="fa-solid fa-person-running text-indigo-400 mr-0.5"></i>Routines: ${routineStr}</p>
                     </div>
-                    <button onclick="deleteDancer('${dancer.id}', '${escapeQuote(dancer.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition-all cursor-pointer">
+                    <button type="button" onclick="event.stopPropagation(); deleteDancer('${dancer.id}', '${escapeQuote(dancer.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition-all cursor-pointer shrink-0">
                         <i class="fa-solid fa-user-minus text-[10px]"></i>
                     </button>
                 `;
@@ -1520,6 +1654,7 @@
                 showToast("Viewing Recital Configuration Setup", "info");
                 populateHostCheckboxes();
                 renderSetupRoutinesList();
+                populateEditDancerSelect();
                 renderSetupDancerRegistry();
             }
         }
