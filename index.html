@@ -52,15 +52,16 @@
                 <p class="text-[9px] text-slate-400 mt-1">Letters, numbers, spaces, and dashes only. Names are not case-sensitive.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button type="button" onclick="handleJoinRecital()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                <button type="button" id="btn-join-recital" onclick="handleJoinRecital()" class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
                     <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
-                    <span>Join Recital</span>
+                    <span id="btn-join-label">Join Recital</span>
                 </button>
-                <button type="button" onclick="handleCreateRecital()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                <button type="button" id="btn-create-recital" onclick="handleCreateRecital()" class="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:pointer-events-none text-white font-bold py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
                     <i class="fa-solid fa-plus text-[10px]"></i>
-                    <span>Create New</span>
+                    <span id="btn-create-label">Create New</span>
                 </button>
             </div>
+            <p id="signin-status" class="text-[10px] text-slate-500 text-center min-h-[14px]"></p>
             <p id="signin-error" class="hidden text-[10px] font-bold text-rose-600 text-center"></p>
             <p id="signin-https-hint" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-center leading-snug"></p>
         </div>
@@ -463,15 +464,13 @@
             appId: "1:1039061307164:web:060356cd7bb14bdd91f4d9"
         };
 
+        if (typeof firebase === 'undefined') {
+            window.firebaseApiError = new Error('Firebase failed to load. Check internet, disable ad blockers, or try another browser.');
+            window.firebaseApi = null;
+            window.firebaseReady = Promise.resolve();
+        } else {
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
-        }
-
-        // Phones / guest Wi‑Fi often block WebSockets — long polling avoids "runtime failed"
-        try {
-            firebase.database().INTERNAL.forceLongPolling();
-        } catch (e) {
-            console.warn('Long polling not enabled:', e);
         }
 
         let listenerRef = null;
@@ -524,6 +523,24 @@
             }
         };
 
+        function dbReadOnce(recitalId) {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error('Connection timed out. Check Wi‑Fi and Firebase rules.')), 12000);
+                recitalRef(recitalId).once(
+                    'value',
+                    (snap) => {
+                        clearTimeout(timer);
+                        resolve(snap);
+                    },
+                    (err) => {
+                        clearTimeout(timer);
+                        reject(err);
+                    }
+                );
+            });
+        }
+        window.firebaseApi.dbReadOnce = dbReadOnce;
+
         window.firebaseReady = (async () => {
             try {
                 await window.firebaseApi.ensureAuth();
@@ -532,6 +549,7 @@
                 window.firebaseApiError = err;
             }
         })();
+        }
     </script>
 
     <!-- App Engine Client Logic -->
@@ -604,7 +622,17 @@
             return err?.message || String(err) || 'Unknown error';
         }
 
+        function setSignInBusy(isBusy, message) {
+            document.getElementById('btn-join-recital').disabled = isBusy;
+            document.getElementById('btn-create-recital').disabled = isBusy;
+            document.getElementById('signin-recital-input').disabled = isBusy;
+            document.getElementById('signin-status').textContent = message || '';
+        }
+
         async function ensureFirebaseReady() {
+            if (!window.firebaseApi) {
+                throw new Error('Firebase not loaded. Refresh the page or check your connection.');
+            }
             await window.firebaseReady;
             if (window.firebaseApiError) {
                 throw window.firebaseApiError;
@@ -673,6 +701,8 @@
             }, (err) => {
                 console.error('RTDB listener error:', err);
                 showToast(formatFirebaseError(err), "warning");
+                handleSignOut();
+                showSignInScreen(formatFirebaseError(err));
             });
         }
 
@@ -692,6 +722,10 @@
                 return;
             }
 
+            setSignInBusy(true, 'Connecting to recital…');
+            const snap = await window.firebaseApi.dbReadOnce(recitalId);
+            applyRemoteSnapshot(snap.val());
+
             window.firebaseApi.disconnectRecital();
             activeRecitalId = recitalId;
             sessionStorage.setItem(SESSION_RECITAL_KEY, recitalId);
@@ -700,6 +734,7 @@
             history.replaceState(null, '', url);
 
             hideSignInScreen();
+            setSignInBusy(false, '');
             updateRecitalSessionUI();
             connectToRecital(recitalId);
 
@@ -713,10 +748,11 @@
                 return;
             }
             try {
-                await ensureFirebaseReady();
+                setSignInBusy(true, 'Signing in…');
                 await joinRecital(recitalId);
             } catch (err) {
                 console.error(err);
+                setSignInBusy(false, '');
                 showSignInScreen(formatFirebaseError(err));
             }
         }
@@ -728,9 +764,11 @@
                 return;
             }
             try {
+                setSignInBusy(true, 'Creating recital…');
                 await ensureFirebaseReady();
                 const exists = await window.firebaseApi.recitalExists(recitalId);
                 if (exists) {
+                    setSignInBusy(false, '');
                     showSignInScreen(`"${recitalId}" already exists. Use Join Recital instead.`);
                     return;
                 }
@@ -739,6 +777,7 @@
                 showToast(`Created recital "${recitalId}"`, "success");
             } catch (err) {
                 console.error(err);
+                setSignInBusy(false, '');
                 showSignInScreen(formatFirebaseError(err));
             }
         }
@@ -780,13 +819,21 @@
         }
 
         async function initApp() {
-            await window.firebaseReady;
-
-            if (window.firebaseApiError) {
-                showSignInScreen('Firebase unavailable — enable Anonymous Auth in console.');
+            if (!window.firebaseApi) {
+                showSignInScreen('Firebase scripts did not load. Refresh or check your connection.');
                 syncUI();
                 return;
             }
+
+            await window.firebaseReady;
+
+            if (window.firebaseApiError) {
+                showSignInScreen(formatFirebaseError(window.firebaseApiError));
+                syncUI();
+                return;
+            }
+
+            document.getElementById('signin-status').textContent = 'Firebase ready — enter a recital name.';
 
             const urlRecital = sanitizeRecitalId(new URLSearchParams(location.search).get('recital') || '');
             const savedRecital = sanitizeRecitalId(sessionStorage.getItem(SESSION_RECITAL_KEY) || '');
@@ -1483,8 +1530,14 @@
 
         window.addEventListener('DOMContentLoaded', initApp);
 
-        // PWA install on Android/iOS requires HTTPS (Firebase Hosting), not LAN http://192.168...
-        if ('serviceWorker' in navigator && window.isSecureContext) {
+        // Clear stale service workers on local dev (they can serve old broken JS)
+        if ('serviceWorker' in navigator && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+            navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
+        }
+
+        // PWA: HTTPS required (Firebase Hosting). Register only on deployed site, not LAN IP.
+        const onFirebaseHosting = location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com');
+        if ('serviceWorker' in navigator && window.isSecureContext && onFirebaseHosting) {
             window.addEventListener('load', async () => {
                 try {
                     const reg = await navigator.serviceWorker.register('./sw.js');
