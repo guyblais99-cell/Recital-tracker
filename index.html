@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recital Stage Tracker - Coordinator 4-Group Monitor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Compact Scrollbars */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased text-xs">
+
+    <!-- Global App Header -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+            
+            <!-- Logo Brand -->
+            <div class="flex items-center space-x-2">
+                <div class="bg-gradient-to-tr from-pink-500 to-indigo-600 p-1.5 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-person-dots-from-line text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-black tracking-tight leading-none text-white">Recital<span class="text-indigo-400">Sync</span></h1>
+                    <span class="text-[9px] uppercase tracking-wider text-pink-400 font-bold block leading-none mt-0.5">Backstage Control</span>
+                </div>
+            </div>
+
+            <!-- Central Live Ticker -->
+            <div class="bg-slate-950 px-3 py-1 rounded-lg border border-slate-800 flex items-center space-x-2 max-w-xs w-full sm:w-auto">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <div class="truncate text-[11px]">
+                    <span class="text-[9px] text-slate-400 uppercase font-bold block tracking-wider leading-none">ONSTAGE CURRENTLY:</span>
+                    <span id="global-ticker-title" class="font-extrabold text-pink-400 leading-none">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Navigation Panel Switcher (3 Distinct Roles) -->
+            <div class="bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex space-x-0.5 w-full sm:w-auto">
+                <button id="tab-volunteer" onclick="switchView('volunteer')" class="flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm">
+                    <i class="fa-solid fa-hands-helping text-[11px]"></i>
+                    <span>Table Volunteers</span>
+                </button>
+                <button id="tab-coordinator" onclick="switchView('coordinator')" class="flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-tower-broadcast text-[11px]"></i>
+                    <span>Coordinators</span>
+                </button>
+                <button id="tab-setup" onclick="switchView('setup')" class="flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-gears text-[11px]"></i>
+                    <span>Recital Setup</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global System Notifier (Toasts) -->
+    <div id="toast-container" class="fixed bottom-3 right-3 z-50 flex flex-col space-y-1 max-w-sm w-full px-3 sm:px-0"></div>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 max-w-7xl mx-auto px-3 py-3 w-full">
+
+        <!-- ==================================================== -->
+        <!-- 1. TABLE VOLUNTEERS PORTAL                           -->
+        <!-- ==================================================== -->
+        <div id="panel-volunteer" class="space-y-3">
+            
+            <!-- Quick Assignments Selector & Active Status Alert Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                
+                <!-- Assigned Group Post -->
+                <div class="bg-white p-3 rounded-xl shadow-xs border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <h2 class="font-bold text-slate-800 text-[10px] uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-clipboard-user text-indigo-500 mr-1.5"></i>Your Assigned Post
+                            </h2>
+                            <span class="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-1.5 py-0.5 rounded">Live Tracker</span>
+                        </div>
+                        <select id="vol-dance-select" onchange="onVolunteerDanceSelected()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-xs">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Live Dynamic Schedule Alerts System -->
+                <div id="alert-gauge-card" class="md:col-span-2 p-3 rounded-xl border transition-all duration-300 flex items-center justify-between gap-3">
+                    <div class="space-y-1">
+                        <span id="alert-gauge-badge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
+                            <!-- Populated dynamically -->
+                        </span>
+                        <h3 id="alert-gauge-title" class="text-sm font-black text-slate-900 leading-tight">Calculating schedule timeline...</h3>
+                        <p id="alert-gauge-desc" class="text-[10px] text-slate-500">Please choose a routine mapping to verify current countdowns.</p>
+                    </div>
+                    
+                    <!-- Minimized Current Stage Widget -->
+                    <div class="bg-white/80 p-2 rounded-lg border border-slate-200/40 text-left min-w-[150px] hidden sm:block">
+                        <span class="text-[8px] text-slate-400 font-bold uppercase block tracking-wider leading-none">Currently Onstage</span>
+                        <span id="sub-active-name" class="font-extrabold text-slate-800 truncate block mt-1 text-[11px]">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inter-Connected Live Attendance Roster Check-In -->
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+                
+                <!-- Table Controls Header -->
+                <div class="p-3 bg-slate-50 border-b border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="font-extrabold text-xs text-slate-900 flex items-center">
+                            <i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>
+                            Backstage Roster Check-In Checklist
+                        </h2>
+                        <p class="text-[10px] text-slate-400">Tap checkboxes when dancers arrive. Mapped overlaps checked in elsewhere show highlighting below.</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-48">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-[9px]"></i>
+                            </span>
+                            <input type="text" id="vol-dancer-search" oninput="renderVolunteerRoster()" placeholder="Search dancer name..." class="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+
+                        <div class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 flex items-center space-x-1.5 text-[10px] font-bold text-slate-700 shrink-0">
+                            <span>Checked In:</span>
+                            <span id="vol-attendance-ratio" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">0/0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Optimized Touch-Friendly Table -->
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-wider">
+                                <th class="p-2.5 w-14 text-center">Arrived</th>
+                                <th class="p-2.5">Dancer's Name</th>
+                                <th class="p-2.5">Status Check in overlapping dances</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vol-roster-rows" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 2. COORDINATORS VIEW PANEL (LIVE RUN CONTROLS)       -->
+        <!-- ==================================================== -->
+        <div id="panel-coordinator" class="space-y-3 hidden">
+            
+            <!-- Live Progress Broadcaster Card -->
+            <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-xl text-white border border-slate-800 flex flex-col justify-between space-y-3">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">Coordinator Deck</span>
+                            <span class="text-[9px] text-indigo-300 font-bold">Active Live Controller</span>
+                        </div>
+                        <h2 class="text-base font-black mt-1">Live Recital Progress Broadcaster</h2>
+                        <p class="text-slate-300 text-[10px] mt-0.5">Advance the active routine index below. This updates volunteer boards instantly.</p>
+                    </div>
+                    <button onclick="restoreSeedData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-700/60 transition-colors flex items-center space-x-1.5 self-stretch md:self-auto justify-center">
+                        <i class="fa-solid fa-arrow-rotate-left text-[9px]"></i>
+                        <span>Reset Sandbox State</span>
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3">
+                    <button onclick="changeShowProgress(-1)" class="bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-backward text-[10px]"></i>
+                        <span>Prev</span>
+                    </button>
+
+                    <div class="text-center bg-slate-900/95 px-4 py-1.5 rounded-lg border border-slate-800 flex-1 truncate">
+                        <span class="text-[8px] uppercase text-slate-400 font-black tracking-widest block leading-none">Performing Right Now</span>
+                        <span id="coord-onstage-title" class="text-xs font-black text-pink-400 block truncate mt-1">No Active Routines Mapped</span>
+                    </div>
+
+                    <button onclick="changeShowProgress(1)" class="bg-pink-600 hover:bg-pink-500 text-white shadow-md px-4 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1 cursor-pointer">
+                        <span>Next</span>
+                        <i class="fa-solid fa-forward text-[10px]"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Backstage Verification Monitor (4-Group Grid Layout) -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="border-b border-slate-100 pb-2 mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <h3 class="font-black text-xs text-slate-900 flex items-center">
+                            <i class="fa-solid fa-clipboard-check text-indigo-600 mr-1.5"></i>
+                            Backstage Gatekeeper Verification Monitor (Onstage + Next 3 Dances)
+                        </h3>
+                        <p class="text-[10px] text-slate-400">Verifying live checked-in rosters for the current onstage and upcoming 3 groups. Tap names to override.</p>
+                    </div>
+                </div>
+
+                <!-- 4 Column Grid for Current + Next 3 Dances -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                    
+                    <!-- Group 1: Onstage Roster Checklist -->
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/80 flex flex-col h-full min-h-[180px]">
+                        <div class="flex justify-between items-center mb-1.5 border-b border-slate-200 pb-1.5 shrink-0">
+                            <div class="truncate mr-1">
+                                <span class="text-[8px] text-pink-600 font-black uppercase tracking-wider block"><i class="fa-solid fa-bolt mr-0.5"></i> On Stage Now</span>
+                                <span id="gk-group-0-name" class="font-extrabold text-slate-700 text-[10px] truncate block leading-tight">N/A</span>
+                            </div>
+                            <span id="gk-group-0-ratio" class="bg-pink-100 text-pink-800 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">0/0</span>
+                        </div>
+                        <div id="gk-group-0-list" class="space-y-1 overflow-y-auto custom-scrollbar flex-1 text-[11px]">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Group 2: On Deck Next Roster Checklist -->
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/80 flex flex-col h-full min-h-[180px]">
+                        <div class="flex justify-between items-center mb-1.5 border-b border-slate-200 pb-1.5 shrink-0">
+                            <div class="truncate mr-1">
+                                <span class="text-[8px] text-rose-600 font-black uppercase tracking-wider block"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i> Next Up (On Deck)</span>
+                                <span id="gk-group-1-name" class="font-extrabold text-slate-700 text-[10px] truncate block leading-tight">N/A</span>
+                            </div>
+                            <span id="gk-group-1-ratio" class="bg-rose-100 text-rose-800 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">0/0</span>
+                        </div>
+                        <div id="gk-group-1-list" class="space-y-1 overflow-y-auto custom-scrollbar flex-1 text-[11px]">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Group 3: On Deck 2 Checklist -->
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/80 flex flex-col h-full min-h-[180px]">
+                        <div class="flex justify-between items-center mb-1.5 border-b border-slate-200 pb-1.5 shrink-0">
+                            <div class="truncate mr-1">
+                                <span class="text-[8px] text-amber-600 font-bold uppercase tracking-wider block"><i class="fa-solid fa-hourglass-half mr-0.5"></i> Prep (2 Away)</span>
+                                <span id="gk-group-2-name" class="font-extrabold text-slate-700 text-[10px] truncate block leading-tight">N/A</span>
+                            </div>
+                            <span id="gk-group-2-ratio" class="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">0/0</span>
+                        </div>
+                        <div id="gk-group-2-list" class="space-y-1 overflow-y-auto custom-scrollbar flex-1 text-[11px]">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Group 4: On Deck 3 Checklist -->
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200/80 flex flex-col h-full min-h-[180px]">
+                        <div class="flex justify-between items-center mb-1.5 border-b border-slate-200 pb-1.5 shrink-0">
+                            <div class="truncate mr-1">
+                                <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider block"><i class="fa-solid fa-clock mr-0.5"></i> Standby (3 Away)</span>
+                                <span id="gk-group-3-name" class="font-extrabold text-slate-700 text-[10px] truncate block leading-tight">N/A</span>
+                            </div>
+                            <span id="gk-group-3-ratio" class="bg-slate-200 text-slate-700 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">0/0</span>
+                        </div>
+                        <div id="gk-group-3-list" class="space-y-1 overflow-y-auto custom-scrollbar flex-1 text-[11px]">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Live Run Sheet Details Monitor -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
+                    <h3 class="font-black text-xs text-slate-900 flex items-center">
+                        <i class="fa-solid fa-list-ol text-indigo-500 mr-1.5"></i>
+                        Live Run Sheet Monitor
+                    </h3>
+                    <span id="coord-manifest-total" class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full font-sans">0</span>
+                </div>
+                <div id="coord-manifest-list" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 3. RECITAL SETUP PANEL (INITIAL CREATION ONLY)        -->
+        <!-- ==================================================== -->
+        <div id="panel-setup" class="space-y-3 hidden">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                
+                <!-- Setup Card 1: Add Routine to Lineup -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-xs text-slate-950 flex items-center border-b border-slate-100 pb-1.5 mb-2">
+                            <i class="fa-solid fa-folder-plus text-indigo-500 mr-1.5"></i>
+                            1. Define Recital Lineup
+                        </h3>
+                        <form id="add-dance-form" onsubmit="handleAddDance(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Routine / Dance Name</label>
+                                <input type="text" id="new-dance-name" required placeholder="e.g., Lyrical Intermediate" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-xs transition-all">
+                                <span class="text-[8px] text-slate-400 mt-1 block leading-tight">Dances are automatically appended to the end of the lineup. You can reorder them at any time in the Routine Manager.</span>
+                            </div>
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-plus text-[9px]"></i>
+                                <span>Add to Lineup</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Setup Card 2: Add & Map Dancer -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-xs text-slate-950 flex items-center border-b border-slate-100 pb-1.5 mb-2">
+                            <i class="fa-solid fa-user-plus text-indigo-500 mr-1.5"></i>
+                            2. Add & Map Dancers
+                        </h3>
+                        <form id="add-dancer-form" onsubmit="handleAddDancer(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Dancer Name</label>
+                                <input type="text" id="new-dancer-name" required placeholder="e.g., Sophia Martinez" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-xs transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] font-bold text-slate-600 uppercase tracking-wider mb-1">Assign to Routines</label>
+                                <div id="host-dance-checkboxes" class="space-y-1.5 border border-slate-200 rounded-lg p-2 max-h-[100px] overflow-y-auto bg-slate-50 custom-scrollbar">
+                                    <!-- Dynamic Checkboxes -->
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition-all shadow-md flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-user-plus text-[9px]"></i>
+                                <span>Save Dancer Assignments</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Setup Card 3: Dynamic Routine List Manager with Reordering -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2">
+                        <div>
+                            <h3 class="font-black text-xs text-slate-950 flex items-center">
+                                <i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>
+                                Routine Manager
+                            </h3>
+                            <p class="text-[8px] text-slate-400">Use arrow keys to shift performance sequence order.</p>
+                        </div>
+                        <span id="setup-manifest-total" class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full font-sans">0</span>
+                    </div>
+
+                    <div id="setup-manifest-list" class="space-y-1.5 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Setup Card 4: Dancer Registry Audit & Quick Deletes -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                    <div>
+                        <h3 class="font-black text-xs text-slate-950 flex items-center">
+                            <i class="fa-solid fa-users text-indigo-500 mr-1.5"></i>
+                            Dancer Registry & Quick Audits
+                        </h3>
+                        <p class="text-[10px] text-slate-400">Review mapped lists. Delete dancers to clear profiles instantly.</p>
+                    </div>
+                    <span id="setup-dancers-total" class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full font-sans">0 Registered</span>
+                </div>
+                
+                <div id="setup-dancer-registry-cards" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- App Engine Client Logic -->
+    <script>
+        // --- Shared Core Database State Schema ---
+        let appState = {
+            currentDanceIndex: 0,
+            dances: [],
+            dancers: [],
+            attendance: {} // Format: { "dancerId_danceId": true }
+        };
+
+        // Static Baseline Demo Seed Data
+        const SEED_DANCES = [
+            { id: "d1", name: "Ballet Beginners", sequence: 1 },
+            { id: "d2", name: "Tap Troupe A", sequence: 2 },
+            { id: "d3", name: "Hip Hop Groovers", sequence: 3 },
+            { id: "d4", name: "Jazz Sparklers", sequence: 4 },
+            { id: "d5", name: "Contemporary Solo", sequence: 5 },
+            { id: "d6", name: "Lyrical Intermediate", sequence: 6 }
+        ];
+
+        const SEED_DANCERS = [
+            { id: "p1", name: "Emma Watson", danceIds: ["d1", "d3", "d5"] },
+            { id: "p2", name: "Liam Neeson", danceIds: ["d2", "d3", "d4"] },
+            { id: "p3", name: "Sophia Martinez", danceIds: ["d1", "d2"] },
+            { id: "p4", name: "Lucas Henderson", danceIds: ["d3", "d4", "d6"] },
+            { id: "p5", name: "Chloe Jenkins", danceIds: ["d3", "d6"] },
+            { id: "p6", name: "Olivia Rodriguez", danceIds: ["d2", "d4", "d5"] },
+            { id: "p7", name: "Ethan Hunt", danceIds: ["d1", "d6"] }
+        ];
+
+        const SEED_ATTENDANCE = {
+            "p1_d1": true,
+            "p3_d1": true,
+            "p2_d2": true,
+            "p6_d2": true,
+            "p1_d3": true,
+            "p2_d3": true
+        };
+
+        // Initialize Local Storage Sandbox
+        function initApp() {
+            const stored = localStorage.getItem('recital_sync_preview_state_v6');
+            if (stored) {
+                try {
+                    appState = JSON.parse(stored);
+                } catch (e) {
+                    loadDemoBaseline();
+                }
+            } else {
+                loadDemoBaseline();
+            }
+            syncUI();
+            showToast("Sandbox storage initialized!", "success");
+        }
+
+        function loadDemoBaseline() {
+            appState.dances = [...SEED_DANCES];
+            appState.dancers = [...SEED_DANCERS];
+            appState.attendance = {...SEED_ATTENDANCE};
+            appState.currentDanceIndex = 2; // Default starting focus: Hip Hop Groovers
+            saveToStorage();
+        }
+
+        function restoreSeedData() {
+            loadDemoBaseline();
+            syncUI();
+            showToast("Restored default sandbox demo data!", "info");
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('recital_sync_preview_state_v6', JSON.stringify(appState));
+        }
+
+        // Helper to normalize sequence numbers clean and sequential (1, 2, 3...)
+        function resequenceDances() {
+            appState.dances.forEach((dance, idx) => {
+                dance.sequence = idx + 1;
+            });
+            saveToStorage();
+        }
+
+        // --- Core UI Pipeline Synchronizer ---
+        function syncUI() {
+            // Keep appState current bounds clean
+            if (appState.currentDanceIndex < 0) appState.currentDanceIndex = 0;
+            if (appState.dances.length > 0 && appState.currentDanceIndex >= appState.dances.length) {
+                appState.currentDanceIndex = appState.dances.length - 1;
+            }
+
+            const activeDance = appState.dances[appState.currentDanceIndex];
+            const activeTitle = activeDance ? `#${activeDance.sequence}: ${activeDance.name}` : "No Routine Scheduled";
+            
+            // Sync live status widgets
+            document.getElementById('global-ticker-title').innerText = activeTitle;
+            document.getElementById('coord-onstage-title').innerText = activeTitle;
+            document.getElementById('sub-active-name').innerText = activeDance ? activeDance.name : "N/A";
+
+            // Update setup layout widgets
+            populateVolSelectors();
+            populateHostCheckboxes();
+
+            // Refresh dashboards
+            renderVolunteerRoster();
+            renderCoordinatorRunSheet();
+            renderCoordinatorGatekeeper();
+            renderSetupRoutinesList();
+            renderSetupDancerRegistry();
+        }
+
+        // --- Select & Checkbox Setup Population ---
+        function populateVolSelectors() {
+            const select = document.getElementById('vol-dance-select');
+            const preValue = select.value;
+
+            select.innerHTML = "";
+            appState.dances.forEach(dance => {
+                const opt = document.createElement('option');
+                opt.value = dance.id;
+                opt.innerText = `Dance #${dance.sequence}: ${dance.name}`;
+                select.appendChild(opt);
+            });
+
+            // Maintain visual selection across redraws
+            if (preValue && appState.dances.some(d => d.id === preValue)) {
+                select.value = preValue;
+            } else if (appState.dances[appState.currentDanceIndex]) {
+                select.value = appState.dances[appState.currentDanceIndex].id;
+            }
+        }
+
+        function populateHostCheckboxes() {
+            const container = document.getElementById('host-dance-checkboxes');
+            container.innerHTML = "";
+
+            if (appState.dances.length === 0) {
+                container.innerHTML = `<p class="text-[10px] text-slate-400 italic">No dances created.</p>`;
+                return;
+            }
+
+            appState.dances.forEach(dance => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-1.5 text-[10px] font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50 transition-all";
+                label.innerHTML = `
+                    <input type="checkbox" value="${dance.id}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600">
+                    <span>#${dance.sequence} - ${dance.name}</span>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        // --- Table Volunteers Portal Execution ---
+        function renderVolunteerRoster() {
+            const selectedDanceId = document.getElementById('vol-dance-select').value;
+            const rowsContainer = document.getElementById('vol-roster-rows');
+            const searchVal = document.getElementById('vol-dancer-search').value.toLowerCase().trim();
+            rowsContainer.innerHTML = "";
+
+            updateHeadsUpGauges(selectedDanceId);
+
+            if (!selectedDanceId) {
+                rowsContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs">Please create a routine sequence in the Recital Setup tab first.</td></tr>`;
+                document.getElementById('vol-attendance-ratio').innerHTML = `0 / 0`;
+                return;
+            }
+
+            // Dancers mapped to this specific routine
+            const targetDancers = appState.dancers.filter(dancer => {
+                const matchesDance = dancer.danceIds.includes(selectedDanceId);
+                const matchesSearch = dancer.name.toLowerCase().includes(searchVal);
+                return matchesDance && matchesSearch;
+            });
+
+            // Calculate overall ratio for progress counter
+            const allAssignedDancers = appState.dancers.filter(d => d.danceIds.includes(selectedDanceId));
+            let presentTotal = 0;
+            allAssignedDancers.forEach(d => {
+                if (appState.attendance[`${d.id}_${selectedDanceId}`]) presentTotal++;
+            });
+            document.getElementById('vol-attendance-ratio').innerHTML = `${presentTotal}/${allAssignedDancers.length}`;
+
+            if (targetDancers.length === 0) {
+                rowsContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs italic">No matching dancers assigned.</td></tr>`;
+                return;
+            }
+
+            targetDancers.forEach(dancer => {
+                const checkedInHere = !!appState.attendance[`${dancer.id}_${selectedDanceId}`];
+
+                // Mapped cross-attendance logic verification (is dancer active elsewhere?)
+                let crossStatusMarkup = "";
+                let checkedInElsewhere = false;
+                let activeAlternateDanceName = "";
+
+                dancer.danceIds.forEach(id => {
+                    if (id === selectedDanceId) return;
+                    const altDance = appState.dances.find(d => d.id === id);
+                    if (!altDance) return;
+
+                    const checkedInAlt = !!appState.attendance[`${dancer.id}_${id}`];
+                    if (checkedInAlt) {
+                        checkedInElsewhere = true;
+                        activeAlternateDanceName = altDance.name;
+                        crossStatusMarkup += `
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-[9px] text-amber-700 font-bold">
+                                <i class="fa-solid fa-circle-check text-amber-500 mr-1"></i>#${altDance.sequence} Checked In Elsewhere
+                            </span>`;
+                    } else {
+                        crossStatusMarkup += `
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[9px] text-slate-400">
+                                <i class="fa-solid fa-circle text-[4px] text-slate-300 mr-1"></i>#${altDance.sequence} Mapped
+                            </span>`;
+                    }
+                });
+
+                // Style rows to indicate cross-attendance alerts
+                const isOverlappingCheckedIn = (!checkedInHere && checkedInElsewhere);
+
+                const tr = document.createElement('tr');
+                tr.className = `transition-all border-b border-slate-100 ${checkedInHere ? 'bg-emerald-50/20 hover:bg-emerald-50/40' : isOverlappingCheckedIn ? 'bg-amber-50/35 hover:bg-amber-50/50' : 'hover:bg-slate-50'}`;
+                
+                tr.innerHTML = `
+                    <td class="p-2 text-center">
+                        <label class="flex items-center justify-center cursor-pointer p-1.5 rounded-full hover:bg-slate-200/50 transition-all">
+                            <input type="checkbox" ${checkedInHere ? 'checked' : ''} 
+                                onclick="toggleVolCheckIn('${dancer.id}', '${selectedDanceId}')"
+                                class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer">
+                        </label>
+                    </td>
+                    <td class="p-2">
+                        <div class="font-extrabold text-slate-900 text-xs">${dancer.name}</div>
+                        ${isOverlappingCheckedIn ? `<span class="text-[8px] text-amber-600 font-bold uppercase tracking-wider block mt-0.5"><i class="fa-solid fa-arrows-spin mr-1 animate-spin"></i> Checked in backstage on "${activeAlternateDanceName}"!</span>` : ''}
+                        <div class="flex flex-wrap gap-1 mt-1 md:hidden">
+                            ${crossStatusMarkup || '<span class="text-[8px] text-slate-400 italic">No other overlaps</span>'}
+                        </div>
+                    </td>
+                    <td class="p-2 hidden md:table-cell">
+                        <div class="flex flex-wrap gap-1.5">
+                            ${crossStatusMarkup || '<span class="text-[9px] text-slate-400 italic">No other overlapping routines assigned</span>'}
+                        </div>
+                    </td>
+                `;
+                rowsContainer.appendChild(tr);
+            });
+        }
+
+        function toggleVolCheckIn(dancerId, danceId) {
+            const key = `${dancerId}_${danceId}`;
+            if (appState.attendance[key]) {
+                delete appState.attendance[key];
+                showToast("Dancer status checked out", "info");
+            } else {
+                appState.attendance[key] = true;
+                showToast("Dancer checked in backstage", "success");
+            }
+            saveToStorage();
+            syncUI();
+        }
+
+        function onVolunteerDanceSelected() {
+            renderVolunteerRoster();
+            showToast("Viewing selected routine check-in list", "info");
+        }
+
+        // --- Heads-Up Timing Alert Engines ---
+        function updateHeadsUpGauges(selectedDanceId) {
+            const card = document.getElementById('alert-gauge-card');
+            const badge = document.getElementById('alert-gauge-badge');
+            const title = document.getElementById('alert-gauge-title');
+            const desc = document.getElementById('alert-gauge-desc');
+
+            const activeIndex = appState.currentDanceIndex;
+            const targetIndex = appState.dances.findIndex(d => d.id === selectedDanceId);
+
+            if (targetIndex === -1 || activeIndex === -1) {
+                card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3";
+                badge.className = "hidden";
+                title.innerText = "No active routine mapping found";
+                desc.innerText = "Create routine sheets in the Recital Setup tab first.";
+                return;
+            }
+
+            const stepDifference = targetIndex - activeIndex;
+
+            if (stepDifference === 0) {
+                // ACTIVE ONSTAGE
+                card.className = "md:col-span-2 p-3 rounded-xl border border-pink-200 bg-gradient-to-br from-pink-50 via-white to-pink-50 flex items-center justify-between gap-3 shadow-xs ring-1 ring-pink-500/10 animate-pulse";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-pink-100 text-pink-700 uppercase tracking-wider";
+                badge.innerHTML = `<i class="fa-solid fa-bolt mr-1"></i> Onstage Now`;
+                title.innerHTML = `Your Team is performing <span class="text-pink-600">RIGHT NOW!</span>`;
+                desc.innerText = "Log attendance check-outs when dancers leave the wings.";
+            } else if (stepDifference === 1) {
+                // NEXT UP (ON DECK)
+                card.className = "md:col-span-2 p-3 rounded-xl border border-rose-300 bg-gradient-to-br from-rose-50 to-white flex items-center justify-between gap-3 ring-1 ring-rose-500/10";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-rose-100 text-rose-800 uppercase tracking-wider";
+                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Next Up`;
+                title.innerText = "ON DECK: Move directly to Stage Left!";
+                desc.innerText = "Gather all children and ensure costumes are secure. Show is advancing next.";
+            } else if (stepDifference > 1 && stepDifference <= 4) {
+                // HEADS UP WINDOW (2-4 away)
+                card.className = "md:col-span-2 p-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/10 flex items-center justify-between gap-3";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-amber-100 text-amber-800 uppercase tracking-wider";
+                badge.innerHTML = `<i class="fa-solid fa-hourglass-half mr-1"></i> Prep Stage Alert`;
+                title.innerText = `Heads Up: Only ${stepDifference} dances out`;
+                desc.innerText = "Begin gathering your dancers, verify roll call, and head towards stage entry.";
+            } else if (stepDifference < 0) {
+                // COMPLETED
+                card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-slate-100/70 flex items-center justify-between gap-3 opacity-70";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-200 text-slate-600 uppercase tracking-wider";
+                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Completed`;
+                title.innerText = "Routine Performance Mapped";
+                desc.innerText = "Routines finished onstage. Release dancers to guardians.";
+            } else {
+                // REMOTE STANDBY
+                card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 uppercase tracking-wider";
+                badge.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Standby`;
+                title.innerText = `Standby - Mapped ${stepDifference} positions out`;
+                desc.innerText = "Keep group assembled safely inside dressing spaces. Rest and hydrate.";
+            }
+        }
+
+        // --- Coordinator View Execution ---
+        function changeShowProgress(dir) {
+            const nextIdx = appState.currentDanceIndex + dir;
+            if (nextIdx >= 0 && nextIdx < appState.dances.length) {
+                appState.currentDanceIndex = nextIdx;
+                saveToStorage();
+                syncUI();
+                showToast(`Show status updated: "${appState.dances[nextIdx].name}"`, "info");
+            } else {
+                showToast("Reached boundary limits of show sequence list!", "warning");
+            }
+        }
+
+        function renderCoordinatorRunSheet() {
+            const container = document.getElementById('coord-manifest-list');
+            container.innerHTML = "";
+            
+            document.getElementById('coord-manifest-total').innerText = appState.dances.length;
+
+            if (appState.dances.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center p-4">No routines added.</p>`;
+                return;
+            }
+
+            appState.dances.forEach((dance, idx) => {
+                const isActive = idx === appState.currentDanceIndex;
+                let stepLabel = "";
+                let itemColorClass = "border-slate-200 bg-slate-50 text-slate-600";
+
+                if (isActive) {
+                    stepLabel = `<span class="text-[8px] font-extrabold uppercase bg-pink-100 text-pink-800 px-1.5 py-0.5 rounded tracking-wider animate-pulse">Now Onstage</span>`;
+                    itemColorClass = "border-pink-300 bg-pink-50/20 text-indigo-950 scale-[1.01] ring-1 ring-pink-400/20 font-bold";
+                } else if (idx < appState.currentDanceIndex) {
+                    stepLabel = `<span class="text-[8px] font-bold uppercase bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">Completed</span>`;
+                    itemColorClass = "border-slate-100 bg-slate-100/40 text-slate-400 opacity-60";
+                } else {
+                    const diff = idx - appState.currentDanceIndex;
+                    if (diff === 1) {
+                        stepLabel = `<span class="text-[8px] font-extrabold uppercase bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">Next On Deck</span>`;
+                        itemColorClass = "border-rose-200 bg-rose-50/10 text-slate-800 font-bold";
+                    } else if (diff <= 4) {
+                        stepLabel = `<span class="text-[8px] font-bold bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200/50">Heads Up (-${diff})</span>`;
+                        itemColorClass = "border-slate-200 bg-white text-slate-700";
+                    } else {
+                        stepLabel = `<span class="text-[8px] font-semibold bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100">Standby</span>`;
+                        itemColorClass = "border-slate-200 bg-white text-slate-500";
+                    }
+                }
+
+                const div = document.createElement('div');
+                div.className = `p-2 rounded-lg border flex justify-between items-center transition-all ${itemColorClass}`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-1.5 truncate">
+                        <span class="font-bold text-[10px] text-slate-400">#${dance.sequence}</span>
+                        <span class="truncate text-[11px]">${dance.name}</span>
+                    </div>
+                    ${stepLabel}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- Render Coordinator Backstage Verification Gatekeeper checklists for 4 groups ---
+        function renderCoordinatorGatekeeper() {
+            const activeIdx = appState.currentDanceIndex;
+
+            // Render each of the 4 columns: 0 (Onstage), 1 (Next Up/On Deck), 2 (Prep 1), 3 (Prep 2)
+            for (let offset = 0; offset < 4; offset++) {
+                const listContainer = document.getElementById(`gk-group-${offset}-list`);
+                const nameEl = document.getElementById(`gk-group-${offset}-name`);
+                const ratioEl = document.getElementById(`gk-group-${offset}-ratio`);
+
+                listContainer.innerHTML = "";
+                const targetDance = appState.dances[activeIdx + offset];
+
+                if (targetDance) {
+                    nameEl.innerText = `#${targetDance.sequence} ${targetDance.name}`;
+                    const assignedDancers = appState.dancers.filter(d => d.danceIds.includes(targetDance.id));
+                    let arrivedCount = 0;
+
+                    if (assignedDancers.length === 0) {
+                        listContainer.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">No dancers assigned.</p>`;
+                    } else {
+                        assignedDancers.forEach(dancer => {
+                            const isCheckedIn = !!appState.attendance[`${dancer.id}_${targetDance.id}`];
+                            if (isCheckedIn) arrivedCount++;
+
+                            const item = document.createElement('div');
+                            item.onclick = () => toggleVolCheckIn(dancer.id, targetDance.id);
+                            item.className = `p-1.5 rounded-md border flex items-center justify-between cursor-pointer transition-all ${isCheckedIn ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`;
+                            item.innerHTML = `
+                                <span class="font-bold text-[11px] truncate">${dancer.name}</span>
+                                <span class="text-[9px] font-black uppercase flex items-center space-x-1 shrink-0">
+                                    ${isCheckedIn ? '<i class="fa-solid fa-circle-check"></i> <span>Arrived</span>' : '<i class="fa-solid fa-triangle-exclamation"></i> <span>Missing</span>'}
+                                </span>
+                            `;
+                            listContainer.appendChild(item);
+                        });
+                    }
+                    ratioEl.innerText = `${arrivedCount}/${assignedDancers.length}`;
+                } else {
+                    nameEl.innerText = "Empty Slot / Show Ends";
+                    ratioEl.innerText = "0/0";
+                    listContainer.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">End of recital program.</p>`;
+                }
+            }
+        }
+
+        // --- Recital Setup View Execution ---
+        function handleAddDance(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-dance-name');
+            const name = nameInput.value.trim();
+
+            if (!name) return;
+
+            // Automatically compute clean next index sequence number based on total dances
+            const nextSeqNumber = appState.dances.length + 1;
+            const newId = "d_" + Date.now();
+            
+            appState.dances.push({ id: newId, name: name, sequence: nextSeqNumber });
+            
+            saveToStorage();
+            syncUI();
+
+            nameInput.value = "";
+            showToast(`Added routine: "${name}" as #${nextSeqNumber}`, "success");
+        }
+
+        // Fixed Dynamic Drag-Free Shift Position Logic Swap Engine
+        function shiftDancePosition(index, direction) {
+            const targetIdx = index + direction;
+            if (targetIdx < 0 || targetIdx >= appState.dances.length) return;
+
+            // Swap objects in array
+            const temp = appState.dances[index];
+            appState.dances[index] = appState.dances[targetIdx];
+            appState.dances[targetIdx] = temp;
+
+            // Swap current active pointer selection alongside swapped items to maintain focus on the same dance
+            if (appState.currentDanceIndex === index) {
+                appState.currentDanceIndex = targetIdx;
+            } else if (appState.currentDanceIndex === targetIdx) {
+                appState.currentDanceIndex = index;
+            }
+
+            // Normalize sequences WITHOUT sorting array first (keeps swapped layout saved exactly as ordered)
+            resequenceDances();
+            syncUI();
+            showToast("Lineup sequence order updated!", "success");
+        }
+
+        function handleAddDancer(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-dancer-name');
+            const checkedBoxes = document.querySelectorAll('#host-dance-checkboxes input[type="checkbox"]:checked');
+            
+            const name = nameInput.value.trim();
+            const chosenDances = Array.from(checkedBoxes).map(cb => cb.value);
+
+            if (!name) return;
+            if (chosenDances.length === 0) {
+                showToast("Dancer must be assigned to at least 1 routine schedule list!", "warning");
+                return;
+            }
+
+            const newId = "p_" + Date.now();
+            appState.dancers.push({ id: newId, name: name, danceIds: chosenDances });
+
+            saveToStorage();
+            syncUI();
+
+            nameInput.value = "";
+            checkedBoxes.forEach(cb => cb.checked = false);
+            showToast(`Registered dancer profile: ${name}`, "success");
+        }
+
+        function deleteDancer(id, name) {
+            appState.dancers = appState.dancers.filter(d => d.id !== id);
+            
+            // Clean up attendance registers
+            Object.keys(appState.attendance).forEach(key => {
+                if (key.startsWith(id + "_")) {
+                    delete appState.attendance[key];
+                }
+            });
+
+            saveToStorage();
+            syncUI();
+            showToast("Deleted dancer: " + name, "info");
+        }
+
+        function deleteDance(id, name) {
+            appState.dances = appState.dances.filter(d => d.id !== id);
+            
+            // Remove from dancer mappings
+            appState.dancers.forEach(dancer => {
+                dancer.danceIds = dancer.danceIds.filter(dId => dId !== id);
+            });
+
+            // Clean up attendance register entries
+            Object.keys(appState.attendance).forEach(key => {
+                if (key.endsWith("_" + id)) {
+                    delete appState.attendance[key];
+                }
+            });
+
+            // Re-normalize layout numbering systems
+            resequenceDances();
+            syncUI();
+            showToast("Removed routine sequence: " + name, "info");
+        }
+
+        function renderSetupRoutinesList() {
+            const container = document.getElementById('setup-manifest-list');
+            container.innerHTML = "";
+            document.getElementById('setup-manifest-total').innerText = appState.dances.length;
+
+            if (appState.dances.length === 0) {
+                container.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">No routines defined.</p>`;
+                return;
+            }
+
+            appState.dances.forEach((dance, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === appState.dances.length - 1;
+
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between text-[11px] hover:border-indigo-100 hover:bg-slate-50/50 transition-colors";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-1.5 truncate">
+                        <span class="font-extrabold text-slate-400 min-w-[18px]">#${dance.sequence}</span>
+                        <span class="truncate font-bold text-slate-800">${dance.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <!-- Up Arrow -->
+                        <button onclick="shiftDancePosition(${idx}, -1)" ${isFirst ? 'disabled' : ''} 
+                            class="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none p-1 rounded hover:bg-slate-200 transition-colors cursor-pointer"
+                            title="Move Up">
+                            <i class="fa-solid fa-arrow-up text-[9px]"></i>
+                        </button>
+                        <!-- Down Arrow -->
+                        <button onclick="shiftDancePosition(${idx}, 1)" ${isLast ? 'disabled' : ''} 
+                            class="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none p-1 rounded hover:bg-slate-200 transition-colors cursor-pointer"
+                            title="Move Down">
+                            <i class="fa-solid fa-arrow-down text-[9px]"></i>
+                        </button>
+                        <!-- Delete Button -->
+                        <button onclick="deleteDance('${dance.id}', '${escapeQuote(dance.name)}')" 
+                            class="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-slate-200 transition-colors cursor-pointer ml-1" 
+                            title="Delete Routine">
+                            <i class="fa-solid fa-trash-can text-[9px]"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderSetupDancerRegistry() {
+            const container = document.getElementById('setup-dancer-registry-cards');
+            container.innerHTML = "";
+            document.getElementById('setup-dancers-total').innerText = `${appState.dancers.length} Registered`;
+
+            if (appState.dancers.length === 0) {
+                container.innerHTML = `<div class="col-span-full p-4 text-center text-slate-400 italic">No dancer profiles registered.</div>`;
+                return;
+            }
+
+            appState.dancers.forEach(dancer => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 hover:bg-slate-100/50 border border-slate-200/60 p-2 rounded-lg flex items-center justify-between transition-all group text-[11px]";
+                
+                // Fetch assigned routines
+                let routines = [];
+                dancer.danceIds.forEach(id => {
+                    const d = appState.dances.find(dance => dance.id === id);
+                    if (d) routines.push(`#${d.sequence}`);
+                });
+
+                const routineStr = routines.length > 0 ? routines.join(', ') : 'None';
+
+                card.innerHTML = `
+                    <div class="truncate mr-2 leading-tight">
+                        <h4 class="font-extrabold text-slate-900 truncate">${dancer.name}</h4>
+                        <p class="text-[9px] text-slate-400 truncate mt-0.5 font-medium"><i class="fa-solid fa-person-running text-indigo-400 mr-0.5"></i>Routines: ${routineStr}</p>
+                    </div>
+                    <button onclick="deleteDancer('${dancer.id}', '${escapeQuote(dancer.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded transition-all cursor-pointer">
+                        <i class="fa-solid fa-user-minus text-[10px]"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- Custom UI Alert Toast System ---
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const id = "toast_" + Date.now();
+
+            const colors = {
+                success: "bg-emerald-600 text-white border-emerald-700",
+                info: "bg-indigo-600 text-white border-indigo-700",
+                warning: "bg-amber-500 text-slate-950 border-amber-600"
+            };
+
+            const icons = {
+                success: "fa-circle-check",
+                info: "fa-circle-info",
+                warning: "fa-triangle-exclamation"
+            };
+
+            const toast = document.createElement('div');
+            toast.id = id;
+            toast.className = `flex items-center justify-between px-3 py-2 rounded-lg shadow border text-[11px] transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <div class="flex items-center space-x-1.5">
+                    <i class="fa-solid ${icons[type] || icons.info}"></i>
+                    <span class="font-bold">${message}</span>
+                </div>
+                <button onclick="dismissToast('${id}')" class="ml-3 hover:opacity-75 transition-opacity cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                dismissToast(id);
+            }, 2500);
+        }
+
+        function dismissToast(id) {
+            const toast = document.getElementById(id);
+            if (toast) {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }
+        }
+
+        function escapeQuote(str) {
+            return str.replace(/'/g, "\\'");
+        }
+
+        // --- View Tabs Switch Controller ---
+        function switchView(target) {
+            const tabVol = document.getElementById('tab-volunteer');
+            const tabCoord = document.getElementById('tab-coordinator');
+            const tabSetup = document.getElementById('tab-setup');
+
+            const panelVol = document.getElementById('panel-volunteer');
+            const panelCoord = document.getElementById('panel-coordinator');
+            const panelSetup = document.getElementById('panel-setup');
+
+            // Hide all panels
+            panelVol.classList.add('hidden');
+            panelCoord.classList.add('hidden');
+            panelSetup.classList.add('hidden');
+
+            // Reset tab styles
+            const tabs = [tabVol, tabCoord, tabSetup];
+            tabs.forEach(t => {
+                t.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white";
+            });
+
+            // Activate target
+            if (target === 'volunteer') {
+                panelVol.classList.remove('hidden');
+                tabVol.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm";
+                showToast("Viewing Table Volunteers Portal", "info");
+                renderVolunteerRoster();
+            } else if (target === 'coordinator') {
+                panelCoord.classList.remove('hidden');
+                tabCoord.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm";
+                showToast("Viewing Coordinators Control Portal", "info");
+                renderCoordinatorRunSheet();
+                renderCoordinatorGatekeeper();
+            } else if (target === 'setup') {
+                panelSetup.classList.remove('hidden');
+                tabSetup.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm";
+                showToast("Viewing Recital Configuration Setup", "info");
+                populateHostCheckboxes();
+                renderSetupRoutinesList();
+                renderSetupDancerRegistry();
+            }
+        }
+
+        // Initial setup run
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
