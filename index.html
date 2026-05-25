@@ -219,19 +219,13 @@
             
             <!-- Live Progress Broadcaster Card -->
             <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-xl text-white border border-slate-800 flex flex-col justify-between space-y-3">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-                    <div>
-                        <div class="flex items-center space-x-1.5">
-                            <span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">Coordinator Deck</span>
-                            <span class="text-[9px] text-indigo-300 font-bold">Active Live Controller</span>
-                        </div>
-                        <h2 class="text-base font-black mt-1">Live Recital Progress Broadcaster</h2>
-                        <p class="text-slate-300 text-[10px] mt-0.5">Advance the active routine index below. This updates volunteer boards instantly.</p>
+                <div>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="bg-pink-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest animate-pulse">Coordinator Deck</span>
+                        <span class="text-[9px] text-indigo-300 font-bold">Active Live Controller</span>
                     </div>
-                    <button onclick="restoreSeedData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-700/60 transition-colors flex items-center space-x-1.5 self-stretch md:self-auto justify-center">
-                        <i class="fa-solid fa-arrow-rotate-left text-[9px]"></i>
-                        <span>Reset Sandbox State</span>
-                    </button>
+                    <h2 class="text-base font-black mt-1">Live Recital Progress Broadcaster</h2>
+                    <p class="text-slate-300 text-[10px] mt-0.5">Advance the active routine index below. This updates volunteer boards instantly.</p>
                 </div>
 
                 <button type="button" id="btn-begin-show" onclick="beginTheShow()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 rounded-lg text-xs transition-all shadow-md flex items-center justify-center space-x-2 disabled:opacity-40 disabled:pointer-events-none">
@@ -587,35 +581,6 @@
             attendance: {} // Format: { "dancerId_danceId": true }
         };
 
-        // Static Baseline Demo Seed Data
-        const SEED_DANCES = [
-            { id: "d1", name: "Ballet Beginners", sequence: 1 },
-            { id: "d2", name: "Tap Troupe A", sequence: 2 },
-            { id: "d3", name: "Hip Hop Groovers", sequence: 3 },
-            { id: "d4", name: "Jazz Sparklers", sequence: 4 },
-            { id: "d5", name: "Contemporary Solo", sequence: 5 },
-            { id: "d6", name: "Lyrical Intermediate", sequence: 6 }
-        ];
-
-        const SEED_DANCERS = [
-            { id: "p1", name: "Emma Watson", danceIds: ["d1", "d3", "d5"] },
-            { id: "p2", name: "Liam Neeson", danceIds: ["d2", "d3", "d4"] },
-            { id: "p3", name: "Sophia Martinez", danceIds: ["d1", "d2"] },
-            { id: "p4", name: "Lucas Henderson", danceIds: ["d3", "d4", "d6"] },
-            { id: "p5", name: "Chloe Jenkins", danceIds: ["d3", "d6"] },
-            { id: "p6", name: "Olivia Rodriguez", danceIds: ["d2", "d4", "d5"] },
-            { id: "p7", name: "Ethan Hunt", danceIds: ["d1", "d6"] }
-        ];
-
-        const SEED_ATTENDANCE = {
-            "p1_d1": true,
-            "p3_d1": true,
-            "p2_d2": true,
-            "p6_d2": true,
-            "p1_d3": true,
-            "p2_d3": true
-        };
-
         const SESSION_RECITAL_KEY = 'recital_sync_active_recital';
         let activeRecitalId = null;
 
@@ -930,20 +895,6 @@
                 showSignInScreen();
                 syncUI();
             }
-        }
-
-        function loadDemoBaseline() {
-            appState.dances = [...SEED_DANCES];
-            appState.dancers = [...SEED_DANCERS];
-            appState.attendance = {...SEED_ATTENDANCE};
-            appState.currentDanceIndex = 2; // Default starting focus: Hip Hop Groovers
-            saveToStorage();
-        }
-
-        function restoreSeedData() {
-            loadDemoBaseline();
-            syncUI();
-            showToast("Restored default sandbox demo data!", "info");
         }
 
         function saveToStorage() {
