@@ -129,27 +129,20 @@
         <!-- 1. TABLE VOLUNTEERS PORTAL                           -->
         <!-- ==================================================== -->
         <div id="panel-volunteer" class="space-y-3">
+
+            <!-- My table: one volunteer, possibly multiple dances — one combined roster -->
+            <div class="bg-white p-3 rounded-xl shadow-xs border border-slate-200">
+                <h2 class="font-bold text-slate-800 text-[10px] uppercase tracking-wider flex items-center mb-1.5">
+                    <i class="fa-solid fa-table text-indigo-500 mr-1.5"></i>My Table — select every dance at this table
+                </h2>
+                <p class="text-[9px] text-slate-400 mb-2">One list of all your kids, even if they appear in several dances. Saved on this device.</p>
+                <div id="vol-table-dances-checkboxes" class="flex flex-wrap gap-1.5 mb-2"></div>
+            </div>
             
-            <!-- Quick Assignments Selector & Active Status Alert Row -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                
-                <!-- Assigned Group Post -->
-                <div class="bg-white p-3 rounded-xl shadow-xs border border-slate-200 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <h2 class="font-bold text-slate-800 text-[10px] uppercase tracking-wider flex items-center">
-                                <i class="fa-solid fa-clipboard-user text-indigo-500 mr-1.5"></i>Your Assigned Post
-                            </h2>
-                            <span class="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-1.5 py-0.5 rounded">Live Tracker</span>
-                        </div>
-                        <select id="vol-dance-select" onchange="onVolunteerDanceSelected()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-xs">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-                </div>
 
                 <!-- Live Dynamic Schedule Alerts System -->
-                <div id="alert-gauge-card" class="md:col-span-2 p-3 rounded-xl border transition-all duration-300 flex items-center justify-between gap-3">
+                <div id="alert-gauge-card" class="md:col-span-2 md:col-start-1 p-3 rounded-xl border transition-all duration-300 flex items-center justify-between gap-3">
                     <div class="space-y-1">
                         <span id="alert-gauge-badge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
                             <!-- Populated dynamically -->
@@ -164,49 +157,48 @@
                         <span id="sub-active-name" class="font-extrabold text-slate-800 truncate block mt-1 text-[11px]">Loading...</span>
                     </div>
                 </div>
+
+                <div id="vol-gather-card" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3">
+                    <h3 class="text-[10px] font-black text-rose-900 uppercase tracking-wider mb-1.5 flex items-center">
+                        <i class="fa-solid fa-bullhorn mr-1.5"></i> Gather now
+                    </h3>
+                    <ul id="vol-gather-list" class="space-y-1 text-[11px] text-rose-950"></ul>
+                </div>
             </div>
 
-            <!-- Inter-Connected Live Attendance Roster Check-In -->
+            <!-- Combined table roster -->
             <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
-                
-                <!-- Table Controls Header -->
                 <div class="p-3 bg-slate-50 border-b border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="font-extrabold text-xs text-slate-900 flex items-center">
-                            <i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>
-                            Backstage Roster Check-In Checklist
+                            <i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>My Table Roster
                         </h2>
-                        <p class="text-[10px] text-slate-400">Tap checkboxes when dancers arrive. Mapped overlaps checked in elsewhere show highlighting below.</p>
+                        <p class="text-[10px] text-slate-400">Arrived = on site tonight. Set status per dance as the night moves along.</p>
                     </div>
-                    
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <div class="relative w-full sm:w-48">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-slate-400">
                                 <i class="fa-solid fa-magnifying-glass text-[9px]"></i>
                             </span>
-                            <input type="text" id="vol-dancer-search" oninput="renderVolunteerRoster()" placeholder="Search dancer name..." class="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <input type="text" id="vol-dancer-search" oninput="renderVolunteerRoster()" placeholder="Search name..." class="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-[10px] focus:ring-1 focus:ring-indigo-500 focus:outline-none">
                         </div>
-
                         <div class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 flex items-center space-x-1.5 text-[10px] font-bold text-slate-700 shrink-0">
-                            <span>Checked In:</span>
+                            <span>At table:</span>
                             <span id="vol-attendance-ratio" class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">0/0</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Mobile Optimized Touch-Friendly Table -->
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-wider">
-                                <th class="p-2.5 w-14 text-center">Arrived</th>
-                                <th class="p-2.5">Dancer's Name</th>
-                                <th class="p-2.5">Other routines for this dancer</th>
+                                <th class="p-2 w-12 text-center">Here</th>
+                                <th class="p-2">Dancer</th>
+                                <th class="p-2">My dances — status</th>
+                                <th class="p-2 hidden lg:table-cell">Elsewhere tonight</th>
                             </tr>
                         </thead>
-                        <tbody id="vol-roster-rows" class="divide-y divide-slate-100">
-                            <!-- Populated dynamically -->
-                        </tbody>
+                        <tbody id="vol-roster-rows" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
@@ -232,6 +224,24 @@
                     <i class="fa-solid fa-play text-[11px]"></i>
                     <span>Begin the Show</span>
                 </button>
+
+                <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800 space-y-2.5">
+                    <p class="text-[9px] font-bold text-indigo-300 uppercase tracking-wider">Volunteer alerts</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="text-[10px] text-slate-300 shrink-0">Gather dancers</label>
+                        <select id="setting-gather-ahead" onchange="saveCoordinatorSettings()" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2 py-1 font-bold">
+                            <option value="1">1 dance before</option>
+                            <option value="2">2 dances before</option>
+                            <option value="3">3 dances before</option>
+                            <option value="4">4 dances before</option>
+                        </select>
+                        <span class="text-[9px] text-slate-500">on stage</span>
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="setting-finale-mode" onchange="saveCoordinatorSettings()" class="rounded border-slate-600 text-pink-500 focus:ring-pink-500">
+                        <span class="text-[11px] font-bold text-pink-300"><i class="fa-solid fa-star mr-1"></i>Finale — all tables to stage now</span>
+                    </label>
+                </div>
 
                 <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3">
                     <button onclick="changeShowProgress(-1)" class="bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer">
@@ -578,14 +588,121 @@
             currentDanceIndex: 0,
             dances: [],
             dancers: [],
-            attendance: {} // Format: { "dancerId_danceId": true }
+            arrivedTonight: {},
+            presence: {},
+            settings: { gatherDancesAhead: 2, finaleMode: false }
         };
 
         const SESSION_RECITAL_KEY = 'recital_sync_active_recital';
+        const SESSION_TABLE_DANCES_KEY = 'recital_sync_table_dances';
         let activeRecitalId = null;
 
+        const PRESENCE_META = {
+            at_table: { label: 'At table', row: 'bg-emerald-50/30', chip: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+            at_stage: { label: 'At stage', row: 'bg-pink-50/30', chip: 'bg-pink-100 text-pink-800 border-pink-200' },
+            done: { label: 'Done', row: 'bg-slate-50', chip: 'bg-slate-200 text-slate-600 border-slate-300' },
+            other_table: { label: 'Other table', row: 'bg-amber-50/30', chip: 'bg-amber-100 text-amber-800 border-amber-200' },
+            with_parent: { label: 'With parent', row: 'bg-slate-100/50', chip: 'bg-slate-100 text-slate-500 border-slate-200' }
+        };
+
         function getEmptyAppState() {
-            return { currentDanceIndex: 0, dances: [], dancers: [], attendance: {} };
+            return {
+                currentDanceIndex: 0,
+                dances: [],
+                dancers: [],
+                arrivedTonight: {},
+                presence: {},
+                settings: { gatherDancesAhead: 2, finaleMode: false }
+            };
+        }
+
+        function normalizeAppState(raw) {
+            const state = getEmptyAppState();
+            if (!raw) return state;
+            state.currentDanceIndex = raw.currentDanceIndex ?? 0;
+            state.dances = Array.isArray(raw.dances) ? raw.dances : [];
+            state.dancers = Array.isArray(raw.dancers) ? raw.dancers : [];
+            state.arrivedTonight = raw.arrivedTonight && typeof raw.arrivedTonight === 'object' ? { ...raw.arrivedTonight } : {};
+            state.presence = raw.presence && typeof raw.presence === 'object' ? { ...raw.presence } : {};
+            state.settings = {
+                gatherDancesAhead: Math.min(8, Math.max(1, parseInt(raw.settings?.gatherDancesAhead, 10) || 2)),
+                finaleMode: !!raw.settings?.finaleMode
+            };
+            if (raw.attendance && typeof raw.attendance === 'object') {
+                Object.keys(raw.attendance).forEach(key => {
+                    if (!raw.attendance[key]) return;
+                    const parts = key.split('_');
+                    const danceId = parts.pop();
+                    const dancerId = parts.join('_');
+                    if (!dancerId || !danceId) return;
+                    state.arrivedTonight[dancerId] = true;
+                    if (!state.presence[key]) state.presence[key] = 'at_table';
+                });
+            }
+            return state;
+        }
+
+        function presenceKey(dancerId, danceId) {
+            return `${dancerId}_${danceId}`;
+        }
+
+        function getPresence(dancerId, danceId) {
+            return appState.presence[presenceKey(dancerId, danceId)] || null;
+        }
+
+        function isArrivedTonight(dancerId) {
+            return !!appState.arrivedTonight[dancerId];
+        }
+
+        function setArrivedTonight(dancerId, arrived) {
+            if (arrived) appState.arrivedTonight[dancerId] = true;
+            else delete appState.arrivedTonight[dancerId];
+            saveToStorage();
+            syncUI();
+        }
+
+        function setDancePresence(dancerId, danceId, status) {
+            const key = presenceKey(dancerId, danceId);
+            if (!status) {
+                delete appState.presence[key];
+            } else {
+                appState.presence[key] = status;
+                appState.arrivedTonight[dancerId] = true;
+            }
+            saveToStorage();
+            syncUI();
+        }
+
+        function getMyTableDanceIds() {
+            try {
+                const saved = sessionStorage.getItem(SESSION_TABLE_DANCES_KEY);
+                if (saved) {
+                    const ids = JSON.parse(saved);
+                    if (Array.isArray(ids)) return ids.filter(id => appState.dances.some(d => d.id === id));
+                }
+            } catch (e) { /* ignore */ }
+            return [];
+        }
+
+        function setMyTableDanceIds(ids) {
+            sessionStorage.setItem(SESSION_TABLE_DANCES_KEY, JSON.stringify(ids));
+        }
+
+        function getDancersForTable(danceIds) {
+            const seen = new Set();
+            const list = [];
+            appState.dancers.forEach(dancer => {
+                if (seen.has(dancer.id)) return;
+                if (!dancer.danceIds.some(id => danceIds.includes(id))) return;
+                seen.add(dancer.id);
+                list.push(dancer);
+            });
+            list.sort((a, b) => a.name.localeCompare(b.name));
+            return list;
+        }
+
+        function getPresenceLabel(status) {
+            return PRESENCE_META[status]?.label || '—';
         }
 
         function sanitizeRecitalId(raw) {
@@ -718,16 +835,7 @@
         }
 
         function applyRemoteSnapshot(data) {
-            if (data) {
-                appState = {
-                    currentDanceIndex: data.currentDanceIndex ?? 0,
-                    dances: Array.isArray(data.dances) ? data.dances : [],
-                    dancers: Array.isArray(data.dancers) ? data.dancers : [],
-                    attendance: data.attendance && typeof data.attendance === 'object' ? data.attendance : {}
-                };
-            } else {
-                appState = getEmptyAppState();
-            }
+            appState = normalizeAppState(data);
             syncUI();
         }
 
@@ -899,7 +1007,9 @@
 
         function saveToStorage() {
             if (!window.firebaseDb) return;
-            window.firebaseDb.ref.set(appState).catch((err) => {
+            const payload = { ...appState };
+            delete payload.attendance;
+            window.firebaseDb.ref.set(payload).catch((err) => {
                 console.error(err);
                 showToast("Could not save to Realtime Database", "warning");
             });
@@ -930,8 +1040,9 @@
             document.getElementById('sub-active-name').innerText = activeDance ? activeDance.name : "N/A";
 
             // Update setup layout widgets
-            populateVolSelectors();
+            populateVolunteerTableDances();
             populateHostCheckboxes();
+            renderCoordinatorSettings();
 
             // Refresh dashboards
             renderVolunteerRoster();
@@ -944,24 +1055,19 @@
         }
 
         // --- Select & Checkbox Setup Population ---
-        function populateVolSelectors() {
-            const select = document.getElementById('vol-dance-select');
-            const preValue = select.value;
-
-            select.innerHTML = "";
-            appState.dances.forEach(dance => {
-                const opt = document.createElement('option');
-                opt.value = dance.id;
-                opt.innerText = `Dance #${dance.sequence}: ${dance.name}`;
-                select.appendChild(opt);
+        function populateVolunteerTableDances() {
+            const myIds = getMyTableDanceIds();
+            buildDanceCheckboxMarkup('vol-table-dances-checkboxes', myIds, 'vol-table-dance-cb');
+            document.querySelectorAll('#vol-table-dances-checkboxes input.vol-table-dance-cb').forEach(cb => {
+                cb.onchange = onVolunteerTableDancesChanged;
             });
+        }
 
-            // Maintain visual selection across redraws
-            if (preValue && appState.dances.some(d => d.id === preValue)) {
-                select.value = preValue;
-            } else if (appState.dances[appState.currentDanceIndex]) {
-                select.value = appState.dances[appState.currentDanceIndex].id;
-            }
+        function onVolunteerTableDancesChanged() {
+            const ids = Array.from(document.querySelectorAll('#vol-table-dances-checkboxes input.vol-table-dance-cb:checked')).map(cb => cb.value);
+            setMyTableDanceIds(ids);
+            renderVolunteerRoster();
+            showToast(ids.length ? `My table: ${ids.length} dance(s)` : 'Select dances for your table', 'info');
         }
 
         function buildDanceCheckboxMarkup(containerId, selectedDanceIds, inputClass) {
@@ -1060,7 +1166,7 @@
             dancer.danceIds = newDanceIds;
 
             removedIds.forEach(danceId => {
-                delete appState.attendance[`${dancerId}_${danceId}`];
+                delete appState.presence[presenceKey(dancerId, danceId)];
             });
 
             saveToStorage();
@@ -1068,175 +1174,264 @@
             showToast(`Updated routines for ${dancer.name}`, "success");
         }
 
+        function renderPresenceButtons(dancerId, danceId) {
+            const current = getPresence(dancerId, danceId);
+            return Object.keys(PRESENCE_META).map(status => {
+                const meta = PRESENCE_META[status];
+                const active = current === status ? 'ring-2 ring-indigo-400 font-black' : 'opacity-80';
+                return `<button type="button" onclick="setDancePresence('${dancerId}', '${danceId}', '${status}')" class="px-1 py-0.5 rounded border text-[8px] ${meta.chip} ${active}">${meta.label}</button>`;
+            }).join('');
+        }
+
+        function renderElsewhereMarkup(dancer, myDanceIds) {
+            let html = '';
+            dancer.danceIds.forEach(id => {
+                if (myDanceIds.includes(id)) return;
+                const dance = appState.dances.find(d => d.id === id);
+                if (!dance) return;
+                const st = getPresence(dancer.id, id);
+                const chip = st ? PRESENCE_META[st]?.chip : 'bg-slate-100 text-slate-400 border-slate-200';
+                const sub = st ? getPresenceLabel(st) : '—';
+                html += `<span class="inline-flex flex-col px-1 py-0.5 rounded border text-[8px] ${chip} max-w-[120px]"><span class="truncate font-bold">#${dance.sequence} ${dance.name}</span><span class="text-[7px] opacity-80">${sub}</span></span>`;
+            });
+            return html || '<span class="text-[9px] text-slate-400 italic">—</span>';
+        }
+
+        function isCheckedInElsewhere(dancer, myDanceIds) {
+            return dancer.danceIds.some(id => {
+                if (myDanceIds.includes(id)) return false;
+                const st = getPresence(dancer.id, id);
+                return st === 'at_table' || st === 'at_stage';
+            });
+        }
+
+        function renderGatherNowList(myDanceIds) {
+            const card = document.getElementById('vol-gather-card');
+            const list = document.getElementById('vol-gather-list');
+            if (!myDanceIds.length || appState.settings.finaleMode) {
+                card.classList.add('hidden');
+                return;
+            }
+            const gatherAhead = appState.settings.gatherDancesAhead || 2;
+            const activeIdx = appState.currentDanceIndex;
+            const items = [];
+
+            myDanceIds.forEach(danceId => {
+                const danceIdx = appState.dances.findIndex(d => d.id === danceId);
+                if (danceIdx < 0) return;
+                const diff = danceIdx - activeIdx;
+                if (diff <= 0 || diff > gatherAhead) return;
+                const dance = appState.dances[danceIdx];
+                getDancersForTable([danceId]).forEach(dancer => {
+                    const st = getPresence(dancer.id, danceId);
+                    if (st === 'at_stage' || st === 'done' || st === 'with_parent') return;
+                    if (st === 'other_table') return;
+                    items.push({ dancer, dance, diff, st });
+                });
+            });
+
+            if (!items.length) {
+                card.classList.add('hidden');
+                return;
+            }
+            card.classList.remove('hidden');
+            list.innerHTML = items.map(({ dancer, dance, diff, st }) => `
+                <li class="flex flex-wrap items-center justify-between gap-1 bg-white/70 rounded px-2 py-1 border border-rose-100">
+                    <span><strong>${dancer.name}</strong> — #${dance.sequence} ${dance.name} <span class="text-rose-600">(${diff} out)</span></span>
+                    <span class="text-[9px]">${getPresenceLabel(st) || 'Not at table'}</span>
+                </li>
+            `).join('');
+        }
+
         // --- Table Volunteers Portal Execution ---
         function renderVolunteerRoster() {
-            const selectedDanceId = document.getElementById('vol-dance-select').value;
+            const myDanceIds = getMyTableDanceIds();
             const rowsContainer = document.getElementById('vol-roster-rows');
             const searchVal = document.getElementById('vol-dancer-search').value.toLowerCase().trim();
             rowsContainer.innerHTML = "";
 
-            updateHeadsUpGauges(selectedDanceId);
+            updateHeadsUpGauges(myDanceIds);
+            renderGatherNowList(myDanceIds);
 
-            if (!selectedDanceId) {
-                rowsContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs">Please create a routine sequence in the Recital Setup tab first.</td></tr>`;
-                document.getElementById('vol-attendance-ratio').innerHTML = `0 / 0`;
+            if (!appState.dances.length) {
+                rowsContainer.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Add routines in Recital Setup first.</td></tr>`;
+                document.getElementById('vol-attendance-ratio').innerHTML = `0/0`;
+                return;
+            }
+            if (!myDanceIds.length) {
+                rowsContainer.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Select your table's dance(s) above to see your roster.</td></tr>`;
+                document.getElementById('vol-attendance-ratio').innerHTML = `0/0`;
                 return;
             }
 
-            // Dancers mapped to this specific routine
-            const targetDancers = appState.dancers.filter(dancer => {
-                const matchesDance = dancer.danceIds.includes(selectedDanceId);
-                const matchesSearch = dancer.name.toLowerCase().includes(searchVal);
-                return matchesDance && matchesSearch;
+            const targetDancers = getDancersForTable(myDanceIds).filter(d => d.name.toLowerCase().includes(searchVal));
+            let atTableCount = 0;
+            targetDancers.forEach(d => {
+                myDanceIds.forEach(did => {
+                    if (getPresence(d.id, did) === 'at_table') atTableCount++;
+                });
             });
+            const slotCount = targetDancers.reduce((n, d) => n + d.danceIds.filter(id => myDanceIds.includes(id)).length, 0);
+            document.getElementById('vol-attendance-ratio').innerHTML = `${atTableCount}/${slotCount}`;
 
-            // Calculate overall ratio for progress counter
-            const allAssignedDancers = appState.dancers.filter(d => d.danceIds.includes(selectedDanceId));
-            let presentTotal = 0;
-            allAssignedDancers.forEach(d => {
-                if (appState.attendance[`${d.id}_${selectedDanceId}`]) presentTotal++;
-            });
-            document.getElementById('vol-attendance-ratio').innerHTML = `${presentTotal}/${allAssignedDancers.length}`;
-
-            if (targetDancers.length === 0) {
-                rowsContainer.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs italic">No matching dancers assigned.</td></tr>`;
+            if (!targetDancers.length) {
+                rowsContainer.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs italic">No dancers match.</td></tr>`;
                 return;
             }
 
             targetDancers.forEach(dancer => {
-                const checkedInHere = !!appState.attendance[`${dancer.id}_${selectedDanceId}`];
-
-                // Mapped cross-attendance logic verification (is dancer active elsewhere?)
-                let crossStatusMarkup = "";
-                let checkedInElsewhere = false;
-                let activeAlternateDanceName = "";
-
-                dancer.danceIds.forEach(id => {
-                    if (id === selectedDanceId) return;
-                    const altDance = appState.dances.find(d => d.id === id);
-                    if (!altDance) return;
-
-                    const checkedInAlt = !!appState.attendance[`${dancer.id}_${id}`];
-                    if (checkedInAlt) {
-                        checkedInElsewhere = true;
-                        activeAlternateDanceName = altDance.name;
-                        crossStatusMarkup += `
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-[9px] text-amber-700 font-bold max-w-full" title="#${altDance.sequence} ${escapeQuote(altDance.name)}">
-                                <i class="fa-solid fa-circle-check text-amber-500 mr-1 shrink-0"></i><span class="truncate">#${altDance.sequence} ${altDance.name}</span>
-                            </span>`;
-                    } else {
-                        crossStatusMarkup += `
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[9px] text-slate-600 font-medium max-w-full" title="#${altDance.sequence} ${escapeQuote(altDance.name)}">
-                                <i class="fa-solid fa-music text-[8px] text-indigo-400 mr-1 shrink-0"></i><span class="truncate">#${altDance.sequence} ${altDance.name}</span>
-                            </span>`;
-                    }
+                const arrived = isArrivedTonight(dancer.id);
+                const myDances = dancer.danceIds.filter(id => myDanceIds.includes(id));
+                let rowClass = 'hover:bg-slate-50';
+                myDances.forEach(did => {
+                    const st = getPresence(dancer.id, did);
+                    if (st && PRESENCE_META[st]?.row) rowClass = PRESENCE_META[st].row;
                 });
+                if (!arrived) rowClass = 'bg-rose-50/20';
 
-                // Style rows to indicate cross-attendance alerts
-                const isOverlappingCheckedIn = (!checkedInHere && checkedInElsewhere);
+                const myDanceCells = myDances.map(did => {
+                    const dance = appState.dances.find(d => d.id === did);
+                    if (!dance) return '';
+                    return `<div class="mb-1.5 last:mb-0">
+                        <div class="text-[8px] font-bold text-slate-500 mb-0.5">#${dance.sequence} ${dance.name}</div>
+                        <div class="flex flex-wrap gap-0.5">${renderPresenceButtons(dancer.id, did)}</div>
+                    </div>`;
+                }).join('');
+
+                const elsewhere = renderElsewhereMarkup(dancer, myDanceIds);
+                const elsewhereHint = !arrived && isCheckedInElsewhere(dancer, myDanceIds)
+                    ? '<span class="text-[8px] text-emerald-600 font-bold block mt-0.5">On site — checked in at another table</span>' : '';
 
                 const tr = document.createElement('tr');
-                tr.className = `transition-all border-b border-slate-100 ${checkedInHere ? 'bg-emerald-50/20 hover:bg-emerald-50/40' : isOverlappingCheckedIn ? 'bg-amber-50/35 hover:bg-amber-50/50' : 'hover:bg-slate-50'}`;
-                
+                tr.className = `transition-all border-b border-slate-100 ${rowClass}`;
                 tr.innerHTML = `
-                    <td class="p-2 text-center">
-                        <label class="flex items-center justify-center cursor-pointer p-1.5 rounded-full hover:bg-slate-200/50 transition-all">
-                            <input type="checkbox" ${checkedInHere ? 'checked' : ''} 
-                                onclick="toggleVolCheckIn('${dancer.id}', '${selectedDanceId}')"
-                                class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer">
+                    <td class="p-2 text-center align-top">
+                        <label class="flex items-center justify-center cursor-pointer p-1">
+                            <input type="checkbox" ${arrived ? 'checked' : ''} onchange="setArrivedTonight('${dancer.id}', this.checked)"
+                                class="w-5 h-5 rounded border-slate-300 text-emerald-600 accent-emerald-600 cursor-pointer" title="Arrived at recital tonight">
                         </label>
                     </td>
-                    <td class="p-2">
+                    <td class="p-2 align-top">
                         <div class="font-extrabold text-slate-900 text-xs">${dancer.name}</div>
-                        ${isOverlappingCheckedIn ? `<span class="text-[8px] text-amber-600 font-bold uppercase tracking-wider block mt-0.5"><i class="fa-solid fa-arrows-spin mr-1 animate-spin"></i> Checked in backstage on "${activeAlternateDanceName}"!</span>` : ''}
-                        <div class="flex flex-wrap gap-1 mt-1 md:hidden">
-                            ${crossStatusMarkup || '<span class="text-[8px] text-slate-400 italic">No other overlaps</span>'}
-                        </div>
+                        ${elsewhereHint}
+                        <div class="flex flex-wrap gap-1 mt-1 lg:hidden">${elsewhere}</div>
                     </td>
-                    <td class="p-2 hidden md:table-cell">
-                        <div class="flex flex-wrap gap-1.5">
-                            ${crossStatusMarkup || '<span class="text-[9px] text-slate-400 italic">No other overlapping routines assigned</span>'}
-                        </div>
-                    </td>
+                    <td class="p-2 align-top min-w-[140px]">${myDanceCells}</td>
+                    <td class="p-2 align-top hidden lg:table-cell"><div class="flex flex-wrap gap-1">${elsewhere}</div></td>
                 `;
                 rowsContainer.appendChild(tr);
             });
         }
 
-        function toggleVolCheckIn(dancerId, danceId) {
-            const key = `${dancerId}_${danceId}`;
-            if (appState.attendance[key]) {
-                delete appState.attendance[key];
-                showToast("Dancer status checked out", "info");
-            } else {
-                appState.attendance[key] = true;
-                showToast("Dancer checked in backstage", "success");
-            }
-            saveToStorage();
-            syncUI();
-        }
-
-        function onVolunteerDanceSelected() {
-            renderVolunteerRoster();
-            showToast("Viewing selected routine check-in list", "info");
-        }
-
         // --- Heads-Up Timing Alert Engines ---
-        function updateHeadsUpGauges(selectedDanceId) {
+        function updateHeadsUpGauges(myDanceIds) {
             const card = document.getElementById('alert-gauge-card');
             const badge = document.getElementById('alert-gauge-badge');
             const title = document.getElementById('alert-gauge-title');
             const desc = document.getElementById('alert-gauge-desc');
-
             const activeIndex = appState.currentDanceIndex;
-            const targetIndex = appState.dances.findIndex(d => d.id === selectedDanceId);
+            const gatherAhead = appState.settings?.gatherDancesAhead ?? 2;
 
-            if (targetIndex === -1 || activeIndex === -1) {
+            if (!myDanceIds || !myDanceIds.length) {
                 card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3";
                 badge.className = "hidden";
-                title.innerText = "No active routine mapping found";
-                desc.innerText = "Create routine sheets in the Recital Setup tab first.";
+                title.innerText = "Select your table dances";
+                desc.innerText = "Check every dance that shares your physical table above.";
                 return;
             }
 
-            const stepDifference = targetIndex - activeIndex;
+            if (appState.settings?.finaleMode) {
+                card.className = "md:col-span-2 p-3 rounded-xl border border-pink-300 bg-gradient-to-br from-pink-100 via-white to-pink-50 flex items-center justify-between gap-3 ring-2 ring-pink-400 animate-pulse";
+                badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-pink-200 text-pink-900 uppercase";
+                badge.innerHTML = `<i class="fa-solid fa-star mr-1"></i> Finale`;
+                title.innerText = "ALL TABLES — Bring every dancer to stage!";
+                desc.innerText = "Finale is up. Gather your whole table and line up now.";
+                return;
+            }
+
+            let soonestDiff = null;
+            let soonestDance = null;
+            myDanceIds.forEach(danceId => {
+                const idx = appState.dances.findIndex(d => d.id === danceId);
+                if (idx < 0) return;
+                const diff = idx - activeIndex;
+                if (diff >= 0 && (soonestDiff === null || diff < soonestDiff)) {
+                    soonestDiff = diff;
+                    soonestDance = appState.dances[idx];
+                }
+            });
+            if (soonestDance === null) {
+                myDanceIds.forEach(danceId => {
+                    const idx = appState.dances.findIndex(d => d.id === danceId);
+                    if (idx < 0) return;
+                    const diff = idx - activeIndex;
+                    if (diff < 0 && (soonestDiff === null || diff > soonestDiff)) {
+                        soonestDiff = diff;
+                        soonestDance = appState.dances[idx];
+                    }
+                });
+            }
+
+            if (soonestDiff === null || !soonestDance) {
+                badge.className = "hidden";
+                title.innerText = "No upcoming dances on your table";
+                desc.innerText = "All your table's dances may have finished.";
+                return;
+            }
+
+            const stepDifference = soonestDiff;
+            const danceLabel = `#${soonestDance.sequence} ${soonestDance.name}`;
 
             if (stepDifference === 0) {
-                // ACTIVE ONSTAGE
                 card.className = "md:col-span-2 p-3 rounded-xl border border-pink-200 bg-gradient-to-br from-pink-50 via-white to-pink-50 flex items-center justify-between gap-3 shadow-xs ring-1 ring-pink-500/10 animate-pulse";
                 badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-pink-100 text-pink-700 uppercase tracking-wider";
                 badge.innerHTML = `<i class="fa-solid fa-bolt mr-1"></i> Onstage Now`;
-                title.innerHTML = `Your Team is performing <span class="text-pink-600">RIGHT NOW!</span>`;
-                desc.innerText = "Log attendance check-outs when dancers leave the wings.";
+                title.innerHTML = `<span class="text-pink-600">${danceLabel}</span> is on stage now`;
+                desc.innerText = "Mark dancers At stage, then Done or With parent / Other table when they leave.";
             } else if (stepDifference === 1) {
-                // NEXT UP (ON DECK)
                 card.className = "md:col-span-2 p-3 rounded-xl border border-rose-300 bg-gradient-to-br from-rose-50 to-white flex items-center justify-between gap-3 ring-1 ring-rose-500/10";
                 badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-rose-100 text-rose-800 uppercase tracking-wider";
                 badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Next Up`;
-                title.innerText = "ON DECK: Move directly to Stage Left!";
-                desc.innerText = "Gather all children and ensure costumes are secure. Show is advancing next.";
-            } else if (stepDifference > 1 && stepDifference <= 4) {
-                // HEADS UP WINDOW (2-4 away)
+                title.innerText = `ON DECK: ${danceLabel}`;
+                desc.innerText = "Line up at stage. Mark kids At stage when they leave the table.";
+            } else if (stepDifference > 1 && stepDifference <= gatherAhead) {
                 card.className = "md:col-span-2 p-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/10 flex items-center justify-between gap-3";
                 badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-extrabold bg-amber-100 text-amber-800 uppercase tracking-wider";
-                badge.innerHTML = `<i class="fa-solid fa-hourglass-half mr-1"></i> Prep Stage Alert`;
-                title.innerText = `Heads Up: Only ${stepDifference} dances out`;
-                desc.innerText = "Begin gathering your dancers, verify roll call, and head towards stage entry.";
+                badge.innerHTML = `<i class="fa-solid fa-hourglass-half mr-1"></i> Gather`;
+                title.innerText = `${danceLabel} — ${stepDifference} dances out`;
+                desc.innerText = `Coordinator alert: gather within ${gatherAhead} dances of on stage. See list below.`;
             } else if (stepDifference < 0) {
-                // COMPLETED
                 card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-slate-100/70 flex items-center justify-between gap-3 opacity-70";
                 badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-200 text-slate-600 uppercase tracking-wider";
-                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Completed`;
-                title.innerText = "Routine Performance Mapped";
-                desc.innerText = "Routines finished onstage. Release dancers to guardians.";
+                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Done`;
+                title.innerText = `${danceLabel} has performed`;
+                desc.innerText = "Mark Done or With parent. Kids may be at another table for their next dance.";
             } else {
-                // REMOTE STANDBY
                 card.className = "md:col-span-2 p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3";
                 badge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 uppercase tracking-wider";
                 badge.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Standby`;
-                title.innerText = `Standby - Mapped ${stepDifference} positions out`;
-                desc.innerText = "Keep group assembled safely inside dressing spaces. Rest and hydrate.";
+                title.innerText = `${danceLabel} — ${stepDifference} dances out`;
+                desc.innerText = "Keep table ready. You'll get a gather alert when coordinator setting says so.";
             }
+        }
+
+        function renderCoordinatorSettings() {
+            const gatherEl = document.getElementById('setting-gather-ahead');
+            const finaleEl = document.getElementById('setting-finale-mode');
+            if (!gatherEl || !finaleEl) return;
+            gatherEl.value = String(appState.settings?.gatherDancesAhead ?? 2);
+            finaleEl.checked = !!appState.settings?.finaleMode;
+        }
+
+        function saveCoordinatorSettings() {
+            const gatherEl = document.getElementById('setting-gather-ahead');
+            const finaleEl = document.getElementById('setting-finale-mode');
+            if (!appState.settings) appState.settings = { gatherDancesAhead: 2, finaleMode: false };
+            appState.settings.gatherDancesAhead = parseInt(gatherEl?.value, 10) || 2;
+            appState.settings.finaleMode = !!finaleEl?.checked;
+            saveToStorage();
+            syncUI();
+            showToast(appState.settings.finaleMode ? 'Finale mode ON — all tables alerted' : 'Show settings saved', 'info');
         }
 
         // --- Coordinator View Execution ---
@@ -1307,8 +1502,8 @@
                     if (diff === 1) {
                         stepLabel = `<span class="text-[8px] font-extrabold uppercase bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">Next On Deck</span>`;
                         itemColorClass = "border-rose-200 bg-rose-50/10 text-slate-800 font-bold";
-                    } else if (diff <= 4) {
-                        stepLabel = `<span class="text-[8px] font-bold bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200/50">Heads Up (-${diff})</span>`;
+                    } else if (diff <= (appState.settings?.gatherDancesAhead ?? 2)) {
+                        stepLabel = `<span class="text-[8px] font-bold bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200/50">Gather (-${diff})</span>`;
                         itemColorClass = "border-slate-200 bg-white text-slate-700";
                     } else {
                         stepLabel = `<span class="text-[8px] font-semibold bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100">Standby</span>`;
@@ -1351,17 +1546,23 @@
                         listContainer.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">No dancers assigned.</p>`;
                     } else {
                         assignedDancers.forEach(dancer => {
-                            const isCheckedIn = !!appState.attendance[`${dancer.id}_${targetDance.id}`];
-                            if (isCheckedIn) arrivedCount++;
+                            const st = getPresence(dancer.id, targetDance.id);
+                            const ready = st === 'at_table' || st === 'at_stage' || st === 'done';
+                            if (ready || isArrivedTonight(dancer.id)) arrivedCount++;
 
                             const item = document.createElement('div');
-                            item.onclick = () => toggleVolCheckIn(dancer.id, targetDance.id);
-                            item.className = `p-1.5 rounded-md border flex items-center justify-between cursor-pointer transition-all ${isCheckedIn ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`;
+                            const cycle = ['at_table', 'at_stage', 'done', 'other_table', 'with_parent'];
+                            item.onclick = () => {
+                                const cur = getPresence(dancer.id, targetDance.id);
+                                const i = cur ? cycle.indexOf(cur) : -1;
+                                const next = cycle[(i + 1) % cycle.length];
+                                setDancePresence(dancer.id, targetDance.id, next);
+                            };
+                            const chip = st ? PRESENCE_META[st]?.chip : 'bg-rose-50 border-rose-200 text-rose-800';
+                            item.className = `p-1.5 rounded-md border flex items-center justify-between cursor-pointer transition-all ${chip}`;
                             item.innerHTML = `
                                 <span class="font-bold text-[11px] truncate">${dancer.name}</span>
-                                <span class="text-[9px] font-black uppercase flex items-center space-x-1 shrink-0">
-                                    ${isCheckedIn ? '<i class="fa-solid fa-circle-check"></i> <span>Arrived</span>' : '<i class="fa-solid fa-triangle-exclamation"></i> <span>Missing</span>'}
-                                </span>
+                                <span class="text-[9px] font-black uppercase shrink-0">${getPresenceLabel(st) || (isArrivedTonight(dancer.id) ? 'Here' : 'Missing')}</span>
                             `;
                             listContainer.appendChild(item);
                         });
@@ -1446,12 +1647,9 @@
 
         function deleteDancer(id, name) {
             appState.dancers = appState.dancers.filter(d => d.id !== id);
-            
-            // Clean up attendance registers
-            Object.keys(appState.attendance).forEach(key => {
-                if (key.startsWith(id + "_")) {
-                    delete appState.attendance[key];
-                }
+            delete appState.arrivedTonight[id];
+            Object.keys(appState.presence).forEach(key => {
+                if (key.startsWith(id + "_")) delete appState.presence[key];
             });
 
             saveToStorage();
@@ -1462,16 +1660,12 @@
         function deleteDance(id, name) {
             appState.dances = appState.dances.filter(d => d.id !== id);
             
-            // Remove from dancer mappings
             appState.dancers.forEach(dancer => {
                 dancer.danceIds = dancer.danceIds.filter(dId => dId !== id);
             });
 
-            // Clean up attendance register entries
-            Object.keys(appState.attendance).forEach(key => {
-                if (key.endsWith("_" + id)) {
-                    delete appState.attendance[key];
-                }
+            Object.keys(appState.presence).forEach(key => {
+                if (key.endsWith("_" + id)) delete appState.presence[key];
             });
 
             // Re-normalize layout numbering systems
