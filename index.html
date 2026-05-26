@@ -605,6 +605,32 @@
         const SESSION_TABLE_DANCES_KEY = 'recital_sync_table_dances';
         let activeRecitalId = null;
 
+        function getSavedRecitalId() {
+            let id = localStorage.getItem(SESSION_RECITAL_KEY);
+            if (!id) {
+                id = sessionStorage.getItem(SESSION_RECITAL_KEY);
+                if (id) {
+                    localStorage.setItem(SESSION_RECITAL_KEY, id);
+                    sessionStorage.removeItem(SESSION_RECITAL_KEY);
+                }
+            }
+            return sanitizeRecitalId(id || '');
+        }
+
+        function setSavedRecitalId(recitalId) {
+            localStorage.setItem(SESSION_RECITAL_KEY, recitalId);
+            sessionStorage.setItem(SESSION_RECITAL_KEY, recitalId);
+        }
+
+        function clearSavedRecitalId() {
+            localStorage.removeItem(SESSION_RECITAL_KEY);
+            sessionStorage.removeItem(SESSION_RECITAL_KEY);
+        }
+
+        function tableDancesStorageKey(recitalId) {
+            return `${SESSION_TABLE_DANCES_KEY}_${recitalId || 'default'}`;
+        }
+
         const VOLUNTEER_STATUSES = ['at_table', 'at_stage', 'done', 'with_parent'];
 
         const PRESENCE_META = {
@@ -724,8 +750,16 @@
         }
 
         function getMyTableDanceIds() {
+            const recitalId = activeRecitalId || getSavedRecitalId();
+            if (!recitalId) return [];
             try {
-                const saved = sessionStorage.getItem(SESSION_TABLE_DANCES_KEY);
+                let saved = localStorage.getItem(tableDancesStorageKey(recitalId));
+                if (!saved) {
+                    saved = sessionStorage.getItem(SESSION_TABLE_DANCES_KEY);
+                    if (saved) {
+                        localStorage.setItem(tableDancesStorageKey(recitalId), saved);
+                    }
+                }
                 if (saved) {
                     const ids = JSON.parse(saved);
                     if (Array.isArray(ids)) return ids.filter(id => appState.dances.some(d => d.id === id));
@@ -735,7 +769,9 @@
         }
 
         function setMyTableDanceIds(ids) {
-            sessionStorage.setItem(SESSION_TABLE_DANCES_KEY, JSON.stringify(ids));
+            const recitalId = activeRecitalId || getSavedRecitalId();
+            if (!recitalId) return;
+            localStorage.setItem(tableDancesStorageKey(recitalId), JSON.stringify(ids));
         }
 
         function getDancersForTable(danceIds) {
@@ -856,6 +892,9 @@
         function showSignInScreen(message) {
             document.getElementById('signin-overlay').classList.remove('hidden');
             updateHttpsInstallHint();
+            const saved = getSavedRecitalId();
+            const input = document.getElementById('signin-recital-input');
+            if (saved && !input.value) input.value = saved;
             const errEl = document.getElementById('signin-error');
             if (message) {
                 errEl.textContent = message;
@@ -922,7 +961,7 @@
 
             window.firebaseApi.disconnectRecital();
             activeRecitalId = recitalId;
-            sessionStorage.setItem(SESSION_RECITAL_KEY, recitalId);
+            setSavedRecitalId(recitalId);
             const url = new URL(location.href);
             url.searchParams.set('recital', recitalId);
             history.replaceState(null, '', url);
@@ -977,8 +1016,9 @@
         }
 
         function handleSignOut() {
+            const lastRecital = activeRecitalId || getSavedRecitalId();
             window.firebaseApi.disconnectRecital();
-            sessionStorage.removeItem(SESSION_RECITAL_KEY);
+            clearSavedRecitalId();
             activeRecitalId = null;
             appState = getEmptyAppState();
             const url = new URL(location.href);
@@ -986,7 +1026,8 @@
             history.replaceState(null, '', url);
             updateRecitalSessionUI();
             syncUI();
-            document.getElementById('signin-recital-input').value = '';
+            const input = document.getElementById('signin-recital-input');
+            input.value = lastRecital || '';
             showSignInScreen();
             showToast("Signed out", "info");
         }
@@ -1027,29 +1068,23 @@
                 return;
             }
 
-            document.getElementById('signin-status').textContent = 'Firebase ready — enter a recital name.';
-
             const urlRecital = sanitizeRecitalId(new URLSearchParams(location.search).get('recital') || '');
-            const savedRecital = sanitizeRecitalId(sessionStorage.getItem(SESSION_RECITAL_KEY) || '');
+            const savedRecital = getSavedRecitalId();
+            const recitalToJoin = urlRecital || savedRecital;
 
-            if (urlRecital) {
+            if (recitalToJoin) {
+                document.getElementById('signin-status').textContent = `Reconnecting to "${recitalToJoin}"…`;
+                document.getElementById('signin-recital-input').value = recitalToJoin;
                 try {
-                    await joinRecital(urlRecital, { quiet: true });
-                    showToast(`Live sync: "${urlRecital}"`, "success");
+                    await joinRecital(recitalToJoin, { quiet: true });
+                    showToast(`Welcome back — "${recitalToJoin}"`, "success");
                 } catch (err) {
                     console.error(err);
-                    showSignInScreen(formatFirebaseError(err));
-                }
-            } else if (savedRecital) {
-                try {
-                    await joinRecital(savedRecital, { quiet: true });
-                    showToast(`Live sync: "${savedRecital}"`, "success");
-                } catch (err) {
-                    console.error(err);
-                    sessionStorage.removeItem(SESSION_RECITAL_KEY);
+                    clearSavedRecitalId();
                     showSignInScreen(formatFirebaseError(err));
                 }
             } else {
+                document.getElementById('signin-status').textContent = 'Firebase ready — enter a recital name.';
                 showSignInScreen();
                 syncUI();
             }
