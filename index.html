@@ -791,6 +791,19 @@
             return PRESENCE_META[status]?.label || '—';
         }
 
+        function getCoordinatorGatekeeperChip(st, dancerId) {
+            if (!st && !isArrivedTonight(dancerId)) {
+                return 'bg-rose-50 border-rose-200 text-rose-900';
+            }
+            if (st === 'with_parent') {
+                return PRESENCE_META.with_parent.chip;
+            }
+            if (st === 'done') {
+                return 'bg-slate-100 border-slate-300 text-slate-600';
+            }
+            return 'bg-emerald-50 border-emerald-200 text-emerald-900';
+        }
+
         function sanitizeRecitalId(raw) {
             const trimmed = (raw || '').trim().toLowerCase();
             const slug = trimmed
@@ -1670,7 +1683,7 @@
                                 const next = cycle[(i + 1) % cycle.length];
                                 setDancePresence(dancer.id, targetDance.id, next);
                             };
-                            const chip = st ? PRESENCE_META[st]?.chip : 'bg-rose-50 border-rose-200 text-rose-800';
+                            const chip = getCoordinatorGatekeeperChip(st, dancer.id);
                             item.className = `p-1.5 rounded-md border flex items-center justify-between cursor-pointer transition-all ${chip}`;
                             item.innerHTML = `
                                 <span class="font-bold text-[11px] truncate">${dancer.name}</span>
