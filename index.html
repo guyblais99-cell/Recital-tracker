@@ -61,6 +61,28 @@
                     <span id="btn-create-label">Create New</span>
                 </button>
             </div>
+
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+                <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider text-center">Choose your role</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="button" onclick="selectRoleAndJoin('volunteer')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-hands-helping text-[10px]"></i>
+                        <span>Volunteer</span>
+                    </button>
+                    <button type="button" onclick="selectRoleAndJoin('coordinator')" class="bg-pink-600 hover:bg-pink-500 text-white font-black py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-tower-broadcast text-[10px]"></i>
+                        <span>Coordinator</span>
+                    </button>
+                </div>
+                <button type="button" onclick="selectRoleAndJoin('desk')" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-black py-2.5 rounded-lg text-xs transition-all flex items-center justify-center space-x-1.5 border border-emerald-200">
+                    <i class="fa-solid fa-clipboard-check text-[10px]"></i>
+                    <span>Front desk check-in</span>
+                </button>
+                <button type="button" onclick="selectRoleAndJoin('setup')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-lg text-[11px] transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-gears text-[10px]"></i>
+                    <span>Recital setup (admins only)</span>
+                </button>
+            </div>
             <p id="signin-status" class="text-[10px] text-slate-500 text-center min-h-[14px]"></p>
             <p id="signin-error" class="hidden text-[10px] font-bold text-rose-600 text-center"></p>
             <p id="signin-https-hint" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 text-center leading-snug"></p>
@@ -101,11 +123,15 @@
                 <span>Install</span>
             </button>
 
-            <!-- Navigation Panel Switcher (3 Distinct Roles) -->
-            <div class="bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex space-x-0.5 w-full sm:w-auto">
+            <!-- Navigation Panel Switcher (role-locked after sign-in) -->
+            <div id="role-tabs" class="bg-slate-950 p-0.5 rounded-lg border border-slate-800 flex space-x-0.5 w-full sm:w-auto">
                 <button id="tab-volunteer" onclick="switchView('volunteer')" class="flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm">
                     <i class="fa-solid fa-hands-helping text-[11px]"></i>
                     <span>Table Volunteers</span>
+                </button>
+                <button id="tab-desk" onclick="switchView('desk')" class="hidden flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-clipboard-check text-[11px]"></i>
+                    <span>Front desk</span>
                 </button>
                 <button id="tab-coordinator" onclick="switchView('coordinator')" class="flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white">
                     <i class="fa-solid fa-tower-broadcast text-[11px]"></i>
@@ -126,9 +152,46 @@
     <main class="flex-1 max-w-7xl mx-auto px-3 py-3 w-full">
 
         <!-- ==================================================== -->
+        <!-- 0. FRONT DESK CHECK-IN                                -->
+        <!-- ==================================================== -->
+        <div id="panel-desk" class="space-y-3 hidden">
+            <div class="flex justify-end">
+                <button type="button" onclick="handleSignOut()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign out
+                </button>
+            </div>
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+                <div class="p-4 bg-gradient-to-br from-emerald-600 to-emerald-700 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <div class="inline-flex items-center gap-2 bg-white/10 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            <span>Front desk</span>
+                        </div>
+                        <h2 class="text-lg font-black mt-2 leading-tight">Parent Check-in / Checkout</h2>
+                        <p class="text-[11px] text-emerald-50/90 mt-1">This only marks dancers as <strong>Here tonight</strong>. Table volunteers handle <strong>At table</strong> after they arrive.</p>
+                    </div>
+                    <div class="relative w-full sm:w-72">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-100">
+                            <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
+                        </span>
+                        <input type="text" id="desk-search-desk" oninput="renderFrontDeskCheckin('desk')" placeholder="Type a name..." class="w-full bg-white/95 border border-white/40 rounded-xl pl-9 pr-3 py-2 text-[12px] font-bold text-slate-900 focus:ring-2 focus:ring-white focus:outline-none">
+                    </div>
+                </div>
+                <div class="p-2">
+                    <div id="desk-list-desk" class="space-y-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================================================== -->
         <!-- 1. TABLE VOLUNTEERS PORTAL                           -->
         <!-- ==================================================== -->
         <div id="panel-volunteer" class="space-y-3">
+            <div class="flex justify-end">
+                <button type="button" onclick="handleSignOut()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign out
+                </button>
+            </div>
 
             <!-- My table: one volunteer, possibly multiple dances — one combined roster -->
             <div class="bg-white p-3 rounded-xl shadow-xs border border-slate-200">
@@ -216,6 +279,11 @@
         <!-- 2. COORDINATORS VIEW PANEL (LIVE RUN CONTROLS)       -->
         <!-- ==================================================== -->
         <div id="panel-coordinator" class="space-y-3 hidden">
+            <div class="flex justify-end">
+                <button type="button" onclick="handleSignOut()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign out
+                </button>
+            </div>
             
             <!-- Live Progress Broadcaster Card -->
             <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-xl text-white border border-slate-800 flex flex-col justify-between space-y-3">
@@ -362,6 +430,11 @@
         <!-- 3. RECITAL SETUP PANEL (INITIAL CREATION ONLY)        -->
         <!-- ==================================================== -->
         <div id="panel-setup" class="space-y-3 hidden">
+            <div class="flex justify-end">
+                <button type="button" onclick="handleSignOut()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-bold px-2 py-1 rounded-lg">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign out
+                </button>
+            </div>
 
             <!-- Recital account: sign out & delete cloud recital -->
             <div class="bg-white p-4 rounded-xl border border-slate-200">
@@ -401,6 +474,10 @@
                             <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5">
                                 <i class="fa-solid fa-plus text-[9px]"></i>
                                 <span>Add to Lineup</span>
+                            </button>
+                            <button type="button" onclick="handleAddIntermission()" class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold py-2 rounded-lg text-xs transition-all border border-emerald-200 flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-mug-hot text-[9px]"></i>
+                                <span>Add Intermission</span>
                             </button>
                         </form>
                     </div>
@@ -631,7 +708,7 @@
             return `${SESSION_TABLE_DANCES_KEY}_${recitalId || 'default'}`;
         }
 
-        const VOLUNTEER_STATUSES = ['at_table', 'at_stage', 'done', 'with_parent'];
+        const VOLUNTEER_STATUSES = ['at_table', 'at_stage'];
 
         const PRESENCE_META = {
             at_table: { label: 'At table', row: 'bg-emerald-50/30', chip: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
@@ -642,11 +719,14 @@
 
         function getEmptyAppState() {
             return {
+                showStarted: false,
                 currentDanceIndex: 0,
                 dances: [],
                 dancers: [],
                 arrivedTonight: {},
                 presence: {},
+                stageTogglePrev: {},
+                stageTogglePrevArrived: {},
                 settings: { gatherDancesAhead: 2, finaleMode: false }
             };
         }
@@ -654,11 +734,14 @@
         function normalizeAppState(raw) {
             const state = getEmptyAppState();
             if (!raw) return state;
+            state.showStarted = !!raw.showStarted;
             state.currentDanceIndex = raw.currentDanceIndex ?? 0;
             state.dances = Array.isArray(raw.dances) ? raw.dances : [];
             state.dancers = Array.isArray(raw.dancers) ? raw.dancers : [];
             state.arrivedTonight = raw.arrivedTonight && typeof raw.arrivedTonight === 'object' ? { ...raw.arrivedTonight } : {};
             state.presence = raw.presence && typeof raw.presence === 'object' ? { ...raw.presence } : {};
+            state.stageTogglePrev = raw.stageTogglePrev && typeof raw.stageTogglePrev === 'object' ? { ...raw.stageTogglePrev } : {};
+            state.stageTogglePrevArrived = raw.stageTogglePrevArrived && typeof raw.stageTogglePrevArrived === 'object' ? { ...raw.stageTogglePrevArrived } : {};
             state.settings = {
                 gatherDancesAhead: Math.min(8, Math.max(1, parseInt(raw.settings?.gatherDancesAhead, 10) || 2)),
                 finaleMode: !!raw.settings?.finaleMode
@@ -675,6 +758,15 @@
                 });
             }
             return state;
+        }
+
+        function setArrivedTonightFlag(dancerId, arrived) {
+            if (arrived) appState.arrivedTonight[dancerId] = true;
+            else delete appState.arrivedTonight[dancerId];
+        }
+
+        function isIntermissionItem(dance) {
+            return dance?.type === 'intermission';
         }
 
         function presenceKey(dancerId, danceId) {
@@ -720,28 +812,81 @@
             return statuses[0];
         }
 
-        function setArrivedTonight(dancerId, arrived) {
-            const myDanceIds = getMyTableDanceIds();
-            const dancer = appState.dancers.find(d => d.id === dancerId);
+        function setArrivedTonight(dancerId, arrived, options = {}) {
             if (arrived) {
                 appState.arrivedTonight[dancerId] = true;
-                if (dancer) {
-                    getDancerMyTableDanceIds(dancer, myDanceIds).forEach(danceId => {
-                        if (!getPresence(dancerId, danceId)) {
-                            appState.presence[presenceKey(dancerId, danceId)] = 'at_table';
-                        }
-                    });
-                }
             } else {
                 delete appState.arrivedTonight[dancerId];
+                // Clear any per-dance statuses when a dancer checks out for the night.
+                const dancer = appState.dancers.find(d => d.id === dancerId);
                 if (dancer) {
-                    getDancerMyTableDanceIds(dancer, myDanceIds).forEach(danceId => {
+                    dancer.danceIds.forEach(danceId => {
                         delete appState.presence[presenceKey(dancerId, danceId)];
                     });
                 }
             }
-            saveToStorage();
-            syncUI();
+            if (!options.skipSave) {
+                saveToStorage();
+                syncUI();
+            }
+        }
+
+        function setArrivedTonightFromDesk(dancerId, arrived, prefix = 'desk') {
+            setArrivedTonight(dancerId, arrived);
+            const searchEl = document.getElementById(`desk-search-${prefix}`);
+            if (searchEl) {
+                searchEl.value = '';
+                searchEl.focus();
+            }
+            renderFrontDeskCheckin(prefix);
+        }
+
+        function renderFrontDeskCheckin(prefix) {
+            const searchEl = document.getElementById(`desk-search-${prefix}`);
+            const listEl = document.getElementById(`desk-list-${prefix}`);
+            if (!searchEl || !listEl) return;
+
+            const q = (searchEl.value || '').toLowerCase().trim();
+            const dancers = appState.dancers
+                .filter(d => (d.name || '').toLowerCase().includes(q))
+                .sort((a, b) => (a.name || '').localeCompare((b.name || '')));
+
+            if (!appState.dancers.length) {
+                listEl.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">Add dancers in Recital Setup first.</p>`;
+                return;
+            }
+            if (!dancers.length) {
+                listEl.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-2">No matches.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = dancers.map(d => {
+                const here = isArrivedTonight(d.id);
+                const badge = here
+                    ? `<span class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">Here</span>`
+                    : `<span class="text-[9px] font-black uppercase bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-200">Not here</span>`;
+
+                const checkInBtn = here
+                    ? `<button type="button" class="px-2 py-1 rounded-lg text-[10px] font-bold border bg-emerald-100 text-emerald-800 border-emerald-200 opacity-60 cursor-default" disabled>Checked in</button>`
+                    : `<button type="button" onclick="setArrivedTonightFromDesk('${d.id}', true, '${prefix}')" class="px-2 py-1 rounded-lg text-[10px] font-bold border bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-600">Check in</button>`;
+
+                const checkOutBtn = here
+                    ? `<button type="button" onclick="setArrivedTonightFromDesk('${d.id}', false, '${prefix}')" class="px-2 py-1 rounded-lg text-[10px] font-bold border bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200">Checkout</button>`
+                    : `<button type="button" class="px-2 py-1 rounded-lg text-[10px] font-bold border bg-slate-50 text-slate-400 border-slate-200 opacity-60 cursor-default" disabled>Checkout</button>`;
+
+                return `
+                    <div class="flex items-center justify-between gap-2 p-2 rounded-lg border ${here ? 'bg-emerald-50/30 border-emerald-200' : 'bg-white border-slate-200'}">
+                        <div class="min-w-0">
+                            <div class="font-extrabold text-[11px] text-slate-900 truncate">${d.name}</div>
+                            <div class="mt-1">${badge}</div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${checkInBtn}
+                            ${checkOutBtn}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function setDancePresence(dancerId, danceId, status, options = {}) {
@@ -969,6 +1114,50 @@
             document.getElementById('signin-error').classList.add('hidden');
         }
 
+        const ROLE_STORAGE_KEY = 'recital_sync_role';
+        let pendingRoleAfterJoin = null;
+
+        function getSavedRole() {
+            return localStorage.getItem(ROLE_STORAGE_KEY) || sessionStorage.getItem(ROLE_STORAGE_KEY) || null;
+        }
+
+        function setSavedRole(role) {
+            if (!role) {
+                localStorage.removeItem(ROLE_STORAGE_KEY);
+                sessionStorage.removeItem(ROLE_STORAGE_KEY);
+                return;
+            }
+            localStorage.setItem(ROLE_STORAGE_KEY, role);
+            sessionStorage.setItem(ROLE_STORAGE_KEY, role);
+        }
+
+        async function selectRoleAndJoin(role) {
+            pendingRoleAfterJoin = role;
+            setSavedRole(role);
+            await handleJoinRecital();
+        }
+
+        function applyRoleLock(role) {
+            const roleTabs = document.getElementById('role-tabs');
+            const tabVol = document.getElementById('tab-volunteer');
+            const tabCoord = document.getElementById('tab-coordinator');
+            const tabSetup = document.getElementById('tab-setup');
+            const tabDesk = document.getElementById('tab-desk');
+            if (!roleTabs || !tabVol || !tabCoord || !tabSetup || !tabDesk) return;
+
+            // After role selection, remove page-switching UI entirely.
+            roleTabs.classList.add('hidden');
+
+            const all = [tabVol, tabCoord, tabDesk, tabSetup];
+            all.forEach(t => t.classList.add('hidden'));
+
+            // Keep a single tab visible only for layout fallback; container stays hidden.
+            if (role === 'volunteer') tabVol.classList.remove('hidden');
+            else if (role === 'coordinator') tabCoord.classList.remove('hidden');
+            else if (role === 'desk') tabDesk.classList.remove('hidden');
+            else if (role === 'setup') tabSetup.classList.remove('hidden');
+        }
+
         function updateRecitalSessionUI() {
             const headerEl = document.getElementById('header-recital-id');
             const setupEl = document.getElementById('setup-active-recital-id');
@@ -1029,6 +1218,11 @@
             setSignInBusy(false, '');
             updateRecitalSessionUI();
             connectToRecital(recitalId);
+
+            const role = pendingRoleAfterJoin || getSavedRole() || 'volunteer';
+            pendingRoleAfterJoin = null;
+            applyRoleLock(role);
+            switchView(role);
 
             if (!quiet) showToast(`Joined recital "${recitalId}"`, "success");
         }
@@ -1193,6 +1387,7 @@
             renderCoordinatorRunSheet();
             renderCoordinatorGatekeeper();
             renderSetupRoutinesList();
+            renderFrontDeskCheckin('desk');
             populateEditDancerSelect();
             renderSetupDancerRegistry();
             updateBeginShowButton();
@@ -1224,7 +1419,7 @@
             }
 
             const selected = new Set(selectedDanceIds || []);
-            appState.dances.forEach(dance => {
+            appState.dances.filter(d => !isIntermissionItem(d)).forEach(dance => {
                 const label = document.createElement('label');
                 label.className = "flex items-center space-x-1.5 text-[10px] font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 cursor-pointer hover:bg-indigo-50 transition-all";
                 const checked = selected.has(dance.id) ? 'checked' : '';
@@ -1614,6 +1809,7 @@
                 showToast("Add routines in Recital Setup before beginning the show.", "warning");
                 return;
             }
+            appState.showStarted = true;
             appState.currentDanceIndex = 0;
             saveToStorage();
             syncUI();
@@ -1630,16 +1826,13 @@
                 btn.querySelector('span').textContent = 'Begin the Show';
                 return;
             }
-            if (appState.currentDanceIndex === 0) {
-                btn.querySelector('span').textContent = 'Restart from First Dance';
-            } else {
-                btn.querySelector('span').textContent = 'Begin the Show';
-            }
+            btn.querySelector('span').textContent = appState.showStarted ? 'Restart from First Dance' : 'Begin the Show';
         }
 
         function changeShowProgress(dir) {
             const nextIdx = appState.currentDanceIndex + dir;
             if (nextIdx >= 0 && nextIdx < appState.dances.length) {
+                appState.showStarted = true;
                 appState.currentDanceIndex = nextIdx;
                 saveToStorage();
                 syncUI();
@@ -1725,12 +1918,32 @@
                             if (ready || isArrivedTonight(dancer.id)) arrivedCount++;
 
                             const item = document.createElement('div');
-                            const cycle = ['at_table', 'at_stage', 'done', 'with_parent'];
                             item.onclick = () => {
                                 const cur = getPresence(dancer.id, targetDance.id);
-                                const i = cur ? cycle.indexOf(cur) : -1;
-                                const next = cycle[(i + 1) % cycle.length];
-                                setDancePresence(dancer.id, targetDance.id, next);
+                                const key = presenceKey(dancer.id, targetDance.id);
+                                if (cur === 'at_stage') {
+                                    const prev = Object.prototype.hasOwnProperty.call(appState.stageTogglePrev || {}, key)
+                                        ? appState.stageTogglePrev[key]
+                                        : null;
+                                    const prevArrived = Object.prototype.hasOwnProperty.call(appState.stageTogglePrevArrived || {}, key)
+                                        ? !!appState.stageTogglePrevArrived[key]
+                                        : true;
+                                    delete appState.stageTogglePrev[key];
+                                    if (appState.stageTogglePrevArrived) delete appState.stageTogglePrevArrived[key];
+                                    const restored = prev ? prev : null;
+                                    setDancePresence(dancer.id, targetDance.id, restored, { skipSave: true });
+                                    if (!prevArrived && !restored) {
+                                        setArrivedTonightFlag(dancer.id, false);
+                                    }
+                                    saveToStorage();
+                                    syncUI();
+                                    return;
+                                }
+                                if (!appState.stageTogglePrev) appState.stageTogglePrev = {};
+                                if (!appState.stageTogglePrevArrived) appState.stageTogglePrevArrived = {};
+                                appState.stageTogglePrev[key] = cur || '';
+                                appState.stageTogglePrevArrived[key] = isArrivedTonight(dancer.id);
+                                setDancePresence(dancer.id, targetDance.id, 'at_stage');
                             };
                             const chip = getCoordinatorGatekeeperChip(st, dancer.id);
                             item.className = `p-1.5 rounded-md border flex items-center justify-between cursor-pointer transition-all ${chip}`;
@@ -1762,13 +1975,23 @@
             const nextSeqNumber = appState.dances.length + 1;
             const newId = "d_" + Date.now();
             
-            appState.dances.push({ id: newId, name: name, sequence: nextSeqNumber });
+            appState.dances.push({ id: newId, name: name, sequence: nextSeqNumber, type: 'dance' });
             
             saveToStorage();
             syncUI();
 
             nameInput.value = "";
             showToast(`Added routine: "${name}" as #${nextSeqNumber}`, "success");
+        }
+
+        function handleAddIntermission() {
+            const nextSeqNumber = appState.dances.length + 1;
+            const newId = "i_" + Date.now();
+            const name = "Intermission";
+            appState.dances.push({ id: newId, name, sequence: nextSeqNumber, type: 'intermission' });
+            saveToStorage();
+            syncUI();
+            showToast(`Added intermission as #${nextSeqNumber}`, "success");
         }
 
         // Fixed Dynamic Drag-Free Shift Position Logic Swap Engine
@@ -1861,13 +2084,15 @@
             appState.dances.forEach((dance, idx) => {
                 const isFirst = idx === 0;
                 const isLast = idx === appState.dances.length - 1;
+                const isInter = isIntermissionItem(dance);
 
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between text-[11px] hover:border-indigo-100 hover:bg-slate-50/50 transition-colors";
                 div.innerHTML = `
                     <div class="flex items-center space-x-1.5 truncate">
                         <span class="font-extrabold text-slate-400 min-w-[18px]">#${dance.sequence}</span>
-                        <span class="truncate font-bold text-slate-800">${dance.name}</span>
+                        <span class="truncate font-bold ${isInter ? 'text-emerald-800' : 'text-slate-800'}">${dance.name}</span>
+                        ${isInter ? `<span class="text-[8px] font-black uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">Intermission</span>` : ''}
                     </div>
                     <div class="flex items-center space-x-1 shrink-0">
                         <!-- Up Arrow -->
@@ -1991,18 +2216,21 @@
             const tabVol = document.getElementById('tab-volunteer');
             const tabCoord = document.getElementById('tab-coordinator');
             const tabSetup = document.getElementById('tab-setup');
+            const tabDesk = document.getElementById('tab-desk');
 
             const panelVol = document.getElementById('panel-volunteer');
             const panelCoord = document.getElementById('panel-coordinator');
             const panelSetup = document.getElementById('panel-setup');
+            const panelDesk = document.getElementById('panel-desk');
 
             // Hide all panels
             panelVol.classList.add('hidden');
             panelCoord.classList.add('hidden');
             panelSetup.classList.add('hidden');
+            panelDesk.classList.add('hidden');
 
             // Reset tab styles
-            const tabs = [tabVol, tabCoord, tabSetup];
+            const tabs = [tabVol, tabCoord, tabDesk, tabSetup];
             tabs.forEach(t => {
                 t.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all text-slate-400 hover:text-white";
             });
@@ -2019,6 +2247,11 @@
                 showToast("Viewing Coordinators Control Portal", "info");
                 renderCoordinatorRunSheet();
                 renderCoordinatorGatekeeper();
+            } else if (target === 'desk') {
+                panelDesk.classList.remove('hidden');
+                tabDesk.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm";
+                showToast("Viewing Front Desk Check-in", "info");
+                renderFrontDeskCheckin('desk');
             } else if (target === 'setup') {
                 panelSetup.classList.remove('hidden');
                 tabSetup.className = "flex-1 sm:flex-initial flex items-center justify-center space-x-1 px-3 py-1.5 rounded-md font-bold transition-all bg-indigo-600 text-white shadow-sm";
