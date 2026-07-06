@@ -4,9 +4,9 @@ GPS scavenger hunt for Android and iPhone — sign in, join a hunt, follow the r
 
 Uses Firebase project **recital-tracker** (auth + Realtime Database).
 
-## Live app (Vercel)
+**Live app:** [https://scavenger-hunt-live.vercel.app](https://scavenger-hunt-live.vercel.app)
 
-After you push to GitHub, Vercel deploys the repo root as the app. Open your Vercel URL on a phone over **HTTPS**, then **Install app** (Android) or **Add to Home Screen** (iPhone, Safari only).
+Also works at [https://my-scavenger-hunt.vercel.app](https://my-scavenger-hunt.vercel.app)
 
 ## Player flow
 
