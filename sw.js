@@ -1,4 +1,4 @@
-const CACHE = 'scavenger-hunt-v4';
+const CACHE = 'scavenger-hunt-v5';
 const SHELL = [
   './',
   './index.html',

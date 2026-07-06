@@ -129,6 +129,22 @@
     </div>
   </section>
 
+  <script>
+    // Block native form submit if the module fails to load (stops Enter from clearing fields)
+    (function () {
+      ['auth-form', 'join-form'].forEach(function (id) {
+        var form = document.getElementById(id);
+        if (form) form.addEventListener('submit', function (e) { e.preventDefault(); });
+      });
+      window.addEventListener('error', function (ev) {
+        var el = document.getElementById('status-msg');
+        if (!el || el.textContent) return;
+        el.textContent = 'App failed to load. Pull down to refresh or clear site data for this page.';
+        el.classList.add('error');
+        console.error(ev.error || ev.message);
+      });
+    })();
+  </script>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
