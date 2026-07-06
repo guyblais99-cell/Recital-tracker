@@ -1,16 +1,20 @@
 {
-  "id": "./",
-  "name": "ApexTrack Live",
-  "short_name": "ApexTrack",
-  "description": "RC lap timer with color gate detection and live leaderboard",
+  "name": "Scavenger Hunt",
+  "short_name": "Hunt",
+  "description": "GPS scavenger hunt — find stops, match photos, unlock clues.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "browser"],
-  "background_color": "#0f1115",
-  "theme_color": "#0f1115",
-  "orientation": "any",
+  "background_color": "#1a0a2e",
+  "theme_color": "#2a1245",
+  "orientation": "portrait",
   "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
@@ -21,13 +25,7 @@
       "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
