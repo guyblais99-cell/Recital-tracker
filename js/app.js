@@ -368,18 +368,51 @@ function startClueScreen() {
   speak(text);
 }
 
+function authErrorMessage(err) {
+  const code = err?.code || '';
+  const host = location.hostname;
+  const map = {
+    'auth/unauthorized-domain': `This site (${host}) is not allowed in Firebase yet. Run scripts/configure-auth-domains.ps1 or add it in Firebase Console → Authentication → Settings → Authorized domains.`,
+    'auth/invalid-credential': 'Wrong email or password.',
+    'auth/invalid-login-credentials': 'Wrong email or password.',
+    'auth/user-not-found': 'No account with that email. Try Sign up.',
+    'auth/wrong-password': 'Wrong password.',
+    'auth/email-already-in-use': 'That email is already registered. Sign in instead.',
+    'auth/weak-password': 'Password must be at least 6 characters.',
+    'auth/invalid-email': 'Enter a valid email address.',
+    'auth/operation-not-allowed': 'Email/password sign-in is disabled in Firebase Console.',
+    'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+    'auth/network-request-failed': 'Network error — check your connection.'
+  };
+  return map[code] || err?.message || 'Sign in failed. Please try again.';
+}
+
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))
+  ]);
+}
+
 function wireEvents() {
   $('auth-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = $('auth-email').value;
+    const email = $('auth-email').value.trim();
     const password = $('auth-password').value;
     const signUp = $('auth-mode').dataset.signup === '1';
+    const btn = $('auth-submit');
     setStatus('');
+    btn.disabled = true;
+    btn.textContent = signUp ? 'Creating account…' : 'Signing in…';
     try {
-      if (signUp) await repo.signUp(email, password);
-      else await repo.signIn(email, password);
+      const action = signUp ? repo.signUp(email, password) : repo.signIn(email, password);
+      await withTimeout(action, 20000, `Sign-in timed out. Add ${location.hostname} to Firebase Authorized domains.`);
     } catch (err) {
-      setStatus(err.message, true);
+      console.error('Auth error', err);
+      setStatus(authErrorMessage(err), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = signUp ? 'Create account' : 'Sign in';
     }
   });
 
@@ -447,8 +480,19 @@ function wireEvents() {
 }
 
 function init() {
-  if (!firebase.apps.length) firebase.initializeApp(window.__FIREBASE_CONFIG__);
-  repo = new HuntRepository(firebase);
+  const fb = window.firebase;
+  if (!fb) {
+    setStatus('Firebase did not load. Disable ad blockers and reload.', true);
+    return;
+  }
+  try {
+    if (!fb.apps.length) fb.initializeApp(window.__FIREBASE_CONFIG);
+    repo = new HuntRepository(fb);
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || 'Could not start Firebase.', true);
+    return;
+  }
   wireEvents();
 
   const session = loadSession();

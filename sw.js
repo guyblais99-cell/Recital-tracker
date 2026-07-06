@@ -1,9 +1,10 @@
-const CACHE = 'scavenger-hunt-v3';
+const CACHE = 'scavenger-hunt-v4';
 const SHELL = [
   './',
   './index.html',
   './css/hunt.css',
   './js/app.js',
+  './js/config.js',
   './js/repo.js',
   './js/geo.js',
   './js/matcher.js',

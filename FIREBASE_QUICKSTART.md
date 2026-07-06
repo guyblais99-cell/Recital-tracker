@@ -35,6 +35,16 @@ First time: a browser opens → sign in with your Google account → then rules 
 
 Create users under **Authentication → Users**, or sign up in the app.
 
+### Vercel sign-in not working?
+
+New deploy URLs must be added to **Authentication → Settings → Authorized domains**. Run:
+
+```powershell
+.\scripts\configure-auth-domains.ps1
+```
+
+Or open: [Authorized domains](https://console.firebase.google.com/project/recital-tracker/authentication/settings) and add `scavenger-hunt-live.vercel.app` (and your other Vercel URLs).
+
 ---
 
 ## Web PWA (Android + iPhone)
