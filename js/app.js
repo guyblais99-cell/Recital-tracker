@@ -405,6 +405,10 @@ function wireEvents() {
     btn.disabled = true;
     btn.textContent = signUp ? 'Creating account…' : 'Signing in…';
     try {
+      if (!repo) {
+        setStatus('Firebase did not load. Check your connection and reload.', true);
+        return;
+      }
       const action = signUp ? repo.signUp(email, password) : repo.signIn(email, password);
       await withTimeout(action, 20000, `Sign-in timed out. Add ${location.hostname} to Firebase Authorized domains.`);
     } catch (err) {
@@ -480,6 +484,8 @@ function wireEvents() {
 }
 
 function init() {
+  wireEvents();
+
   const fb = window.firebase;
   if (!fb) {
     setStatus('Firebase did not load. Disable ad blockers and reload.', true);
@@ -493,7 +499,6 @@ function init() {
     setStatus(err.message || 'Could not start Firebase.', true);
     return;
   }
-  wireEvents();
 
   const session = loadSession();
   if (session?.huntId) $('btn-resume').classList.remove('hidden');
