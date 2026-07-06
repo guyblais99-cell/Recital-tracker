@@ -1,14 +1,12 @@
 import {
   ARRIVED_RADIUS_M,
   PEEL_THRESHOLDS_M,
-  PLAYER_RELIABLE_ACCURACY_M,
   RADAR_GREEN_ONLY_M,
   RADAR_MAX_RANGE_M,
   RADAR_RING_COUNT
 } from './config.js';
 
 export const HOST_PIN_IDEAL_ACCURACY_M = 12;
-
 export const PLAYER_RELIABLE_ACCURACY_M = 50;
 
 export function distanceMeters(lat1, lon1, lat2, lon2) {
