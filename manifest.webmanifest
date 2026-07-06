@@ -1,14 +1,14 @@
 {
   "id": "./",
-  "name": "RecitalSync",
-  "short_name": "RecitalSync",
-  "description": "Backstage recital check-in and live show tracker",
+  "name": "ApexTrack Live",
+  "short_name": "ApexTrack",
+  "description": "RC lap timer with color gate detection and live leaderboard",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
   "orientation": "any",
   "icons": [
     {

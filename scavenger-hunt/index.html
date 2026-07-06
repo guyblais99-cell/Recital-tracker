@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2a1245">
+  <meta name="description" content="GPS scavenger hunt — find stops, match photos, unlock clues.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hunt">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <title>Scavenger Hunt</title>
+  <link rel="stylesheet" href="./css/hunt.css">
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+  <script>
+    window.__FIREBASE_CONFIG = {
+      apiKey: 'AIzaSyC9xRYjrl9g7h_3g_BnRoea7FfcvIlCCa0',
+      authDomain: 'recital-tracker.firebaseapp.com',
+      databaseURL: 'https://recital-tracker-default-rtdb.firebaseio.com',
+      projectId: 'recital-tracker',
+      storageBucket: 'recital-tracker.firebasestorage.app',
+      messagingSenderId: '1039061307164',
+      appId: '1:1039061307164:web:060356cd7bb14bdd91f4d9'
+    };
+  </script>
+</head>
+<body>
+
+  <!-- Auth -->
+  <section class="screen" data-screen="auth">
+    <div class="panel">
+      <h1 class="title-gold">SCAVENGER HUNT</h1>
+      <p class="subtle">Sign in to join or host hunts.</p>
+      <form id="auth-form">
+        <input id="auth-email" type="email" autocomplete="email" placeholder="Email" required>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password" required minlength="6">
+        <div id="auth-mode" data-signup="0"></div>
+        <button type="submit" class="btn btn-primary" id="auth-submit">Sign in</button>
+      </form>
+      <p id="status-msg" class="error"></p>
+      <button type="button" class="btn btn-ghost" id="toggle-auth">Need an account? Sign up</button>
+    </div>
+  </section>
+
+  <!-- Home / Join -->
+  <section class="screen hidden" data-screen="home">
+    <div class="panel">
+      <h1 class="title-gold">JOIN THE HUNT</h1>
+      <p class="subtle" id="user-email"></p>
+      <button type="button" class="btn btn-accent hidden" id="btn-resume">Continue your hunt →</button>
+      <form id="join-form">
+        <label class="subtle" for="join-code">Join code</label>
+        <input id="join-code" class="mono" maxlength="12" autocomplete="off" required placeholder="ABC123">
+        <label class="subtle" for="team-name">Team / player name</label>
+        <input id="team-name" required placeholder="The Explorers">
+        <button type="submit" class="btn btn-primary">Start hunting!</button>
+      </form>
+      <p class="subtle" style="margin-top:1.5rem">Hosts can create hunts in the Android app for now.</p>
+      <button type="button" class="btn btn-ghost" id="btn-signout">Sign out</button>
+    </div>
+  </section>
+
+  <!-- Player hunt -->
+  <section class="screen hidden" data-screen="player">
+    <div class="top-bar">
+      <h2>Your hunt</h2>
+      <button type="button" class="btn btn-ghost" id="btn-leave" style="width:auto;margin:0;padding:0.4rem">Leave</button>
+    </div>
+    <div class="gps-strength">
+      <div id="gps-bar-fill" class="gps-bar-fill good"></div>
+      <span>GPS strength</span>
+    </div>
+    <div id="hunt-name-banner" class="hunt-banner">Hunt</div>
+    <div class="player-body">
+      <div id="player-complete" class="complete-banner hidden">🎉 Hunt complete!</div>
+      <div id="player-active">
+        <p id="progress-label">0 of 0 checkpoints</p>
+        <div class="progress-wrap"><div id="progress-bar"></div></div>
+        <div id="direction-clue-wrap" class="clue-card">
+          <h3>Direction clue</h3>
+          <p id="direction-clue-text" class="clue-text"></p>
+          <button type="button" class="btn-play" id="btn-play-clue">Read clue aloud</button>
+        </div>
+        <div class="radar-wrap">
+          <canvas id="radar-canvas" width="240" height="240"></canvas>
+          <p id="radar-distance">—</p>
+          <p id="radar-trend">Warming up GPS…</p>
+        </div>
+        <button type="button" class="btn btn-success hidden" id="btn-arrive">You're here — align photo!</button>
+      </div>
+      <h3 style="margin-top:1rem;font-size:0.9rem;color:var(--muted)">Checkpoints</h3>
+      <ul id="checkpoint-list" class="checkpoint-list"></ul>
+    </div>
+  </section>
+
+  <!-- Photo align -->
+  <section class="screen hidden align-screen" data-screen="align">
+    <div class="align-video-wrap">
+      <video id="align-video" playsinline autoplay muted></video>
+      <img id="align-ghost" alt="">
+      <div class="align-corners"></div>
+      <div id="align-arrows"></div>
+    </div>
+    <div class="align-panel">
+      <button type="button" class="btn btn-ghost" id="btn-align-back" style="width:auto">← Back</button>
+      <p id="align-title" style="font-weight:700;margin:0.25rem 0"></p>
+      <p id="align-status">Line up the ghost…</p>
+      <div class="align-progress"><div id="align-bar"></div></div>
+      <button type="button" class="btn btn-ghost" id="btn-align-skip">I have it matched</button>
+    </div>
+    <canvas id="align-analyze" class="hidden"></canvas>
+  </section>
+
+  <!-- Reward clue -->
+  <section class="screen hidden" data-screen="clue">
+    <div class="panel" style="padding-top:2rem">
+      <h1 class="title-gold" style="color:var(--green)">Checkpoint complete! ✓</h1>
+      <p id="reward-title" class="subtle"></p>
+      <div class="reward-card">
+        <h3>Reward clue</h3>
+        <p id="reward-clue-text"></p>
+        <button type="button" class="btn-play" id="btn-play-reward">Read again</button>
+      </div>
+      <button type="button" class="btn btn-success" id="btn-clue-continue">Continue hunt</button>
+    </div>
+  </section>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

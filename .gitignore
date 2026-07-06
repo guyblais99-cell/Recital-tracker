@@ -1,0 +1,16 @@
+# Android build output
+**/app/build/
+**/.gradle/
+**/.cxx/
+**/.externalNativeBuild/
+**/local.properties
+*.iml
+.idea/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Secrets (never commit)
+.env
+**/google-services.json

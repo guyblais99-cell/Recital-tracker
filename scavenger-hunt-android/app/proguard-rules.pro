@@ -1,0 +1,2 @@
+-keepattributes Signature
+-keepclassmembers class com.recital.scavengerhunt.data.** { *; }

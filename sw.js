@@ -1,10 +1,14 @@
-const CACHE_NAME = 'recital-sync-v3';
+const CACHE_NAME = 'apextrack-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './lib/apriltag_wasm.js',
+  './lib/apriltag_wasm.wasm',
+  './lib/atag-detector.js',
+  './lib/36h11.json'
 ];
 
 self.addEventListener('install', (event) => {

@@ -5,6 +5,44 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "joinCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "hostHunts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "apextrack": {
+      "$sessionId": {
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "triggers": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$triggerId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        },
+        "p2p": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
     }
   }
 }

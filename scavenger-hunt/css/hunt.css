@@ -1,0 +1,264 @@
+/* Scavenger Hunt PWA */
+:root {
+  --bg: #1a0a2e;
+  --card: #2a1245;
+  --card-deep: #1e0d35;
+  --gold: #ffd93d;
+  --cyan: #00d4ff;
+  --green: #39ff14;
+  --accent: #ff6b9d;
+  --text: #f5f0ff;
+  --muted: #9aabcc;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hidden { display: none !important; }
+
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Auth & Home */
+.panel {
+  padding: 1.25rem;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+h1, h2 { margin: 0 0 0.5rem; }
+.title-gold { color: var(--gold); font-weight: 900; letter-spacing: 0.04em; }
+.subtle { color: var(--muted); font-size: 0.95rem; }
+
+input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin: 0.4rem 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #4a3068;
+  background: var(--card-deep);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+input.mono { font-family: ui-monospace, monospace; letter-spacing: 0.2em; font-weight: 700; }
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+.btn-primary { background: var(--cyan); color: #0a1628; }
+.btn-success { background: var(--green); color: #0a2810; }
+.btn-ghost { background: transparent; color: var(--muted); font-weight: 600; }
+.btn-accent { background: var(--accent); color: #fff; }
+
+.error { color: #ff6b6b; font-size: 0.9rem; }
+
+/* Player header */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--card-deep);
+}
+.top-bar h2 { font-size: 1rem; margin: 0; }
+
+.gps-strength {
+  position: relative;
+  height: 22px;
+  background: var(--card-deep);
+  overflow: hidden;
+}
+.gps-strength span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 2;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.gps-bar-fill {
+  height: 100%;
+  width: 20%;
+  transition: width 0.3s, background 0.3s;
+}
+.gps-bar-fill.good { background: var(--green); }
+.gps-bar-fill.fair { background: var(--gold); }
+.gps-bar-fill.ok { background: #ff6b00; }
+.gps-bar-fill.weak { background: #ff2d2d; }
+
+.hunt-banner {
+  margin: 0.65rem 1rem;
+  padding: 0.85rem 1rem;
+  text-align: center;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  background: var(--card);
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: var(--gold);
+}
+
+.player-body { padding: 0 1rem 1.5rem; flex: 1; overflow-y: auto; }
+
+.progress-wrap {
+  height: 8px;
+  background: var(--card);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--green);
+  transition: width 0.3s;
+}
+
+.clue-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 1rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+.clue-card h3 { color: var(--gold); margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; }
+.clue-text { font-size: 1.15rem; font-weight: 600; line-height: 1.45; margin: 0 0 0.75rem; }
+
+.btn-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 2px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.btn-play::before { content: '▶'; font-size: 0.85rem; }
+
+.radar-wrap { text-align: center; margin: 0.5rem 0; }
+#radar-canvas { width: min(100%, 240px); height: auto; aspect-ratio: 1; }
+#radar-distance { font-size: 1.75rem; font-weight: 800; margin: 0.25rem 0; }
+#radar-trend { font-size: 1.1rem; font-weight: 800; margin: 0; }
+
+.checkpoint-list { list-style: none; padding: 0; margin: 1rem 0 0; }
+.checkpoint-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.4rem;
+  border-radius: 10px;
+  background: var(--card-deep);
+}
+.checkpoint-item.current { background: var(--card); outline: 1px solid var(--cyan); }
+.checkpoint-item.done { opacity: 0.85; }
+.cp-num { font-weight: 800; color: var(--gold); min-width: 1.5rem; }
+.cp-title { flex: 1; font-weight: 600; }
+.cp-status { font-weight: 800; }
+
+.complete-banner {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--green);
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+/* Align screen */
+.align-screen { background: #000; position: relative; }
+.align-video-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+#align-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#align-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.42;
+  pointer-events: none;
+}
+.align-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(255, 217, 61, 0.35);
+}
+#align-arrows .arrow {
+  position: absolute;
+  font-size: 3rem;
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  animation: pulse-arrow 0.7s ease-in-out infinite alternate;
+}
+#align-arrows .left { left: 8px; top: 50%; transform: translateY(-50%); }
+#align-arrows .right { right: 8px; top: 50%; transform: translateY(-50%); }
+#align-arrows .up { top: 56px; left: 50%; transform: translateX(-50%); }
+#align-arrows .down { bottom: 140px; left: 50%; transform: translateX(-50%); }
+
+@keyframes pulse-arrow { from { opacity: 0.55; } to { opacity: 1; } }
+
+.align-panel {
+  background: var(--card-deep);
+  padding: 1rem;
+}
+#align-status { text-align: center; font-weight: 800; color: var(--green); margin: 0.5rem 0; }
+.align-progress {
+  height: 10px;
+  background: var(--card);
+  border-radius: 5px;
+  overflow: hidden;
+}
+#align-bar { height: 100%; width: 0; background: var(--green); transition: width 0.15s; }
+
+/* Clue reveal */
+.reward-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  border: 2px solid var(--green);
+}
+.reward-card h3 { color: var(--green); margin: 0 0 0.75rem; }
+#reward-clue-text { font-size: 1.2rem; line-height: 1.5; font-weight: 600; }

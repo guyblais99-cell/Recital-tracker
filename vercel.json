@@ -26,6 +26,15 @@
           "value": "no-cache"
         }
       ]
+    },
+    {
+      "source": "/(.*)\\.wasm",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        }
+      ]
     }
   ]
 }
